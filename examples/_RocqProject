@@ -148,3 +148,18 @@ piggybank/PiggyBankCorrect.v
 piggybank/PiggyBankExtractLIGO.v
 piggybank/PiggyBankExtractLiquidity.v
 piggybank/PiggyBankExtractRust.v
+
+-Q wip/general ConCert.Examples.Wip.General 
+wip/general/Blockchain_modify.v
+wip/general/ContractCommon_modify.v
+wip/general/ChainTraceProperty.v
+wip/general/BuildUtils_modify.v
+wip/general/ChainStreamProperty.v
+wip/general/Agreement.v
+wip/general/Jonas2024_speclang.v
+wip/general/MyBuildUtils.v
+
+-Q wip/ppl2026 ConCert.Examples.Wip.Ppl2026
+wip/ppl2026/Liveness.v
+wip/ppl2026/SimpleAuction.v
+wip/ppl2026/SimpleAuctionCorrect.v

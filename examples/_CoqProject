@@ -143,9 +143,9 @@ crowdfunding/CrowdfundingLiquidity.v
 
 -Q wip/general ConCert.Examples.Wip.General 
 wip/general/Blockchain_modify.v
-wip/general/BuildUtils_modify.v
 wip/general/ContractCommon_modify.v
 wip/general/ChainTraceProperty.v
+wip/general/BuildUtils_modify.v
 wip/general/ChainStreamProperty.v
 wip/general/Agreement.v
 wip/general/Jonas2024_speclang.v

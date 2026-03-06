@@ -1,7 +1,7 @@
-From Coq Require Import Lia.
-From Coq Require Import List. Import ListNotations.
-From Coq Require Import Logic.Decidable.
-From Coq Require Import ZArith.
+From Stdlib Require Import Lia.
+From Stdlib Require Import List. Import ListNotations.
+From Stdlib Require Import Logic.Decidable.
+From Stdlib Require Import ZArith.
 From ConCert.Utils Require Import Automation.
 From ConCert.Utils Require Import RecordUpdate.
 From ConCert.Execution Require Import Serializable.
@@ -521,7 +521,7 @@ Section BuildUtilsPart.
       split; eauto.
       do 3 try split; only 9: apply env_eq; eauto; cbn; try lia.
       + now apply finalized_heigh_chain_height.
-      + apply NPeano.Nat.sub_0_le in slot_hit.
+      + apply Nat.sub_0_le in slot_hit.
         rewrite_environment_equiv. cbn. lia.
     - specialize (forward_time_exact bstate reward creator slot) as
         (bstate' & header & reach' & header_valid & slot_hit' & queue' & env_eq); eauto.
@@ -2271,7 +2271,7 @@ End ListDropFromContract.
       eapply action_trace_finish_equiv_strong; eauto.
       all : rewrite_queue; auto.
     - (* invalid, valid *) (* contra *)
-      specialize (action_trace_some prev2 prev1 next2)
+      specialize (action_trace_some prev2 prev1 next2 action_trace)
         as (next1' & action_trace1 & _ & queue_eq1 & _); auto.
       exists prev2. split; auto. repeat constructor.
       exists prev1. split; auto. repeat constructor.
@@ -2279,7 +2279,7 @@ End ListDropFromContract.
       destruct (no_action_trace next1'); auto. rewrite_queue. 
       inversion queue_prev0. auto.
     - (* valid, invalid *)
-      specialize (action_trace_some prev1 prev2 next1)
+      specialize (action_trace_some prev1 prev2 next1 action_trace)
         as (next2' & action_trace2 & _ & queue_eq2 & _); auto.
       exists prev1. split; auto. repeat constructor.
       exists prev2. split; auto. repeat constructor.
@@ -2288,7 +2288,6 @@ End ListDropFromContract.
     - (* invalid, invalid *)
       repeat rewrite_environment_equiv. rewrite_queue. inversion queue_prev0.
       repeat split; auto.
-      Unshelve. auto. auto.
   Qed.
 
   Lemma cyclic_trace_eq {from to} :

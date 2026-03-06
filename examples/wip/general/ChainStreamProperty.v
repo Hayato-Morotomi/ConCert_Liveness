@@ -7,11 +7,11 @@
 From ConCert.Examples.Wip.General Require Import Blockchain_modify.
 From ConCert.Examples.Wip.General Require Import ChainTraceProperty.
 From ConCert.Examples.Wip.General Require Import BuildUtils_modify.
-From Coq Require Import ZArith_base.
-From Coq Require Import List. Import ListNotations.
-From Coq Require Import Streams.
-From Coq Require Import Basics.
-From Coq Require Import Lia.
+From Stdlib Require Import ZArith_base.
+From Stdlib Require Import List. Import ListNotations.
+From Stdlib Require Import Streams.
+From Stdlib Require Import Basics.
+From Stdlib Require Import Lia.
 From ConCert.Utils Require Import Automation.
 From ConCert.Utils Require Import Extras.
 From ConCert.Execution Require Import ChainedList.

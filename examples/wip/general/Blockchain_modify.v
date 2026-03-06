@@ -57,12 +57,12 @@ The next types deal with semantics.
   where these implementations need to prove that they satisfy our semantics.
 *)
 
-From Coq Require Import ZArith.
-From Coq Require Import List.
-From Coq Require Import Psatz.
-From Coq Require Import Permutation.
-From Coq Require Import Morphisms.
-From Coq Require Import String.
+From Stdlib Require Import ZArith.
+From Stdlib Require Import List.
+From Stdlib Require Import Psatz.
+From Stdlib Require Import Permutation.
+From Stdlib Require Import Morphisms.
+From Stdlib Require Import String.
 From ConCert.Execution Require Import ChainedList.
 From ConCert.Execution Require Import Monad.
 From ConCert.Execution Require Import ResultMonad.
@@ -182,7 +182,7 @@ Section Blockchain.
       (** Amount of currency passed in call *)
       ctx_amount : Amount;
     }.
-  MetaCoq Run (make_setters ContractCallContext).
+  MetaRocq Run (make_setters ContractCallContext).
 
   (** Operations that a contract can return or that a user can use
   to interact with a chain. *)
@@ -322,7 +322,7 @@ Section Blockchain.
     Some {| contract_address := addr; send := ifc_send; |}.
 
 Section Semantics.
-  MetaCoq Run (make_setters Chain).
+  MetaRocq Run (make_setters Chain).
   Definition add_balance
             (addr : Address)
             (amount : Amount)
@@ -409,7 +409,7 @@ Section Semantics.
     now rewrite env_eq.
   Qed.
 
-  MetaCoq Run (make_setters Environment).
+  MetaRocq Run (make_setters Environment).
   Definition transfer_balance (from to : Address) (amount : Amount) (env : Environment) :=
     env<|env_account_balances ::= add_balance to amount|>
       <|env_account_balances ::= add_balance from (-amount)|>.
@@ -690,7 +690,7 @@ Section Trace.
       chain_state_queue : list Action;
     }.
 
-  MetaCoq Run (make_setters ChainState).
+  MetaRocq Run (make_setters ChainState).
 
   Inductive ActionChainStep (prev_bstate next_bstate : ChainState) :=
   | action_step_action :
@@ -1152,11 +1152,11 @@ Section Theories.
       cbn in *.
       destruct_action_eval; rewrite_environment_equiv; subst; auto.
       all: cbn in *; specialize_hypotheses.
-      + eapply list.Forall_cons; eauto.
-      + destruct (address_eqb contract to_addr); try congruence. eapply list.Forall_cons; eauto.
-      + apply list.Forall_app.
+      + eapply List.Forall_cons_iff; eauto.
+      + destruct (address_eqb contract to_addr); try congruence. eapply List.Forall_cons_iff; eauto.
+      + apply List.Forall_app.
         assert (contract <> to_addr) by congruence.
-        split; [eapply new_acts_no_out_queue|eapply list.Forall_cons]; eauto.
+        split; [eapply new_acts_no_out_queue|eapply List.Forall_cons_iff]; eauto.
     - (* Invalid User Action *)
       rewrite_environment_equiv.
         repeat
@@ -1195,15 +1195,15 @@ Section Theories.
         subst;
         cbn in *.
       + (* Transfer step, just use IH *)
-        eapply list.Forall_cons; eauto.
+        eapply List.Forall_cons_iff; eauto.
       + (* Deploy step. First show that it is not to contract and then use IH. *)
         destruct_address_eq; try congruence.
-        eapply list.Forall_cons; eauto.
+        eapply List.Forall_cons_iff; eauto.
       + (* Call. Show that it holds for new actions as it is from *)
         (* another contract, and use IH for remaining. *)
-        apply list.Forall_app.
+        apply List.Forall_app.
         assert (contract <> to_addr) by congruence.
-        split; [eapply new_acts_no_out_queue|eapply list.Forall_cons]; eauto.
+        split; [eapply new_acts_no_out_queue|eapply List.Forall_cons_iff]; eauto.
   Qed.
 
   (* action_trace *)
