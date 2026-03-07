@@ -1,23 +1,27 @@
-From ConCert.Examples.Wip.General Require Import Blockchain_modify_2.
-From ConCert.Examples.Wip.General Require Import BuildUtils_modify_2.
-From ConCert.Examples.Wip.General Require Import ChainTraceProperty.
-From ConCert.Examples.Wip.General Require Import ChainStreamProperty.
-From ConCert.Examples.Wip.General Require Import Agreement.
-From Coq Require Import ZArith_base.
-From Coq Require Import List. Import ListNotations.
-From Coq Require Import Streams.
-From Coq Require Import Basics.
-From Coq Require Import Lia.
+(* 
+  20260108
+
+*)
+
+From Stdlib Require Import ZArith.
+From Stdlib Require Import List. Import ListNotations.
+From Stdlib Require Import Streams.
+From Stdlib Require Import Basics.
+From Stdlib Require Import Lia.
 From ConCert.Utils Require Import Automation.
 From ConCert.Utils Require Import Extras.
 From ConCert.Execution Require Import ChainedList.
 From ConCert.Execution Require Import Serializable.
 From ConCert.Execution Require Import ResultMonad.
-From Coq Require Import Wf_nat.
-From ConCert.Execution Require Import Serializable.
-From Coq Require Import Wellfounded.
-From Coq Require Import Wellfounded.Lexicographic_Product.
-From Coq Require Import Relations.Relation_Operators.
+From ConCert.Examples.Wip.General Require Import Agreement.
+From Stdlib Require Import Wf_nat.
+From Stdlib Require Import Wellfounded.
+From Stdlib Require Import Wellfounded.Lexicographic_Product.
+From Stdlib Require Import Relations.Relation_Operators.
+From ConCert.Examples.Wip.General Require Import Blockchain_modify.
+From ConCert.Examples.Wip.General Require Import BuildUtils_modify.
+From ConCert.Examples.Wip.General Require Import ChainTraceProperty.
+From ConCert.Examples.Wip.General Require Import ChainStreamProperty.
 
 Section RankingLiveness.
 

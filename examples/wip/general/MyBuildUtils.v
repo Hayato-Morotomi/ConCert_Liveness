@@ -1,26 +1,26 @@
-From Coq Require Import Logic.Decidable.
+From Stdlib Require Import Logic.Decidable.
 From ConCert.Utils Require Import Automation.
 From ConCert.Utils Require Import Extras.
-From ConCert.Examples.Wip.General Require Import Blockchain_modify_2.
-From ConCert.Examples.Wip.General Require Import BuildUtils_modify_2.
+From ConCert.Examples.Wip.General Require Import Blockchain_modify.
+From ConCert.Examples.Wip.General Require Import BuildUtils_modify.
 From ConCert.Examples.Wip.General Require Import ChainTraceProperty.
-From ConCert.Examples.Wip.General Require Import ContractCommon_modify_2.
+From ConCert.Examples.Wip.General Require Import ContractCommon_modify.
 From ConCert.Execution Require Import Monad.
 From ConCert.Execution Require Import ResultMonad.
 From ConCert.Execution Require Import Serializable.
 From ConCert.Execution Require Import ChainedList.
-From Coq Require Import List. Import ListNotations.
-From Coq Require Import ZArith_base.
-From Coq Require Import Lia.
-From Coq Require Import Streams.
-From ConCert.Examples.Wip.TemporalLogic Require Import Agreement.
+From Stdlib Require Import List. Import ListNotations.
+From Stdlib Require Import ZArith.
+From Stdlib Require Import Lia.
+From Stdlib Require Import Streams.
+From ConCert.Examples.Wip.General Require Import Agreement.
 From ConCert.Examples.Wip.Ppl2026 Require Import Liveness.
 From ConCert.Execution Require Import Serializable.
 
-From Coq Require Import Arith.Wf_nat.
-From Coq Require Import Wellfounded.
-From Coq Require Import Wellfounded.Lexicographic_Product.
-From Coq Require Import Relations.Relation_Operators.
+From Stdlib Require Import Arith.Wf_nat.
+From Stdlib Require Import Wellfounded.
+From Stdlib Require Import Wellfounded.Lexicographic_Product.
+From Stdlib Require Import Relations.Relation_Operators.
 From ConCert.Examples.Wip.General Require Import ChainStreamProperty.
 
 
@@ -205,7 +205,7 @@ Context {BaseTypes : ChainBase}.
     destruct_chain_step; subst.
     - rewrite_queue. cbn in *. lia.
     - rewrite_queue. inversion Hlen.
-      specialize (IHn (Str_nth 1 str)) as (queue_nil & height_eq); auto.
+      edestruct (IHn (Str_nth 1 str)) as (queue_nil & height_eq); auto.
       eapply stream_reahcable; eauto.
       apply stream_path_nth_tl; auto.
       rewrite Str_nth_plus, Nat.add_1_r in *. subst n.
@@ -213,7 +213,7 @@ Context {BaseTypes : ChainBase}.
       rewrite (action_trace_chain_height_invariant action_trace).
       auto.
     - rewrite_queue. inversion Hlen.
-      specialize (IHn (Str_nth 1 str)) as (queue_nil & height_eq); auto.
+      edestruct (IHn (Str_nth 1 str)) as (queue_nil & height_eq); auto.
       eapply stream_reahcable; eauto.
       apply stream_path_nth_tl; auto.
       rewrite Str_nth_plus, Nat.add_1_r in *. subst n.
@@ -236,13 +236,13 @@ Context {BaseTypes : ChainBase}.
     }
     intros * Hdiff reach Hheight.
     unfold pAF in *. intros * Hpath Hstart.
-    specialize (empty_queue_finally bstate) as [queue_empty height_eq]; eauto.
+    edestruct (empty_queue_finally bstate) as [queue_empty height_eq]; eauto.
     pose Hpath as Hpath'. unfold path in Hpath'.
     destruct (Hpath' (length bstate.(chain_state_queue))) as [step]. rewrite Nat.add_1_r in *.
     destruct_chain_step; rewrite_queue; try congruence.
     destruct valid_header.
     unfold p_finally in *.
-    specialize (IHdiff (Str_nth (S (length (chain_state_queue bstate))) str)
+    edestruct (IHdiff (Str_nth (S (length (chain_state_queue bstate))) str)
       ) as (n' & height_eq'); auto.
     rewrite_environment_equiv. cbn. lia. 
     eapply stream_reahcable; eauto.
@@ -793,7 +793,7 @@ Local Ltac evaluate_receive_one_step :=
 
 Ltac evaluate_receive := 
   match goal with
-      | |- Blockchain_modify_2.receive ?contract ?chain ?ctx ?cstate ?msg = Ok (?new_cstate, ?new_acts) =>
+      | |- Blockchain_modify.receive ?contract ?chain ?ctx ?cstate ?msg = Ok (?new_cstate, ?new_acts) =>
           cbn;
           repeat evaluate_receive_one_step; 
           auto

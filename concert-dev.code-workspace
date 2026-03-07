@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"name": "ConCert-Root",
+			"path": "."
+		}
+	],
+	"settings": {
+		"vsrocq.args": [
+			"-Q", "examples/wip/general", "ConCert.Examples.Wip.General",
+			"-Q", "examples/wip/ppl2026", "ConCert.Examples.Wip.Ppl2026"
+		]
+	}
+}

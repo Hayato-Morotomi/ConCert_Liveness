@@ -2,25 +2,25 @@
 
 From ConCert.Utils Require Import Automation.
 From ConCert.Utils Require Import Extras.
-From ConCert.Examples.Wip.General Require Import Blockchain_modify_2.
-From ConCert.Examples.Wip.General Require Import BuildUtils_modify_2.
+From ConCert.Examples.Wip.General Require Import Blockchain_modify.
+From ConCert.Examples.Wip.General Require Import BuildUtils_modify.
 From ConCert.Examples.Wip.General Require Import ChainTraceProperty.
 From ConCert.Examples.Wip.General Require Import ChainStreamProperty.
-From ConCert.Examples.Wip.General Require Import ContractCommon_modify_2.
+From ConCert.Examples.Wip.General Require Import ContractCommon_modify.
 From ConCert.Examples.Wip.General Require Import MyBuildUtils.
 From ConCert.Execution Require Import Monad.
 From ConCert.Execution Require Import ResultMonad.
 From ConCert.Execution Require Import Serializable.
 From ConCert.Execution Require Import ChainedList.
-From Coq Require Import List. Import ListNotations.
-From Coq Require Import ZArith_base.
-From Coq Require Import Lia.
-From Coq Require Import Streams.
-From ConCert.Examples.Wip.TemporalLogic Require Import Agreement.
-From ConCert.Examples.Wip.TemporalLogic Require Import Liveness.
+From Stdlib Require Import List. Import ListNotations.
+From Stdlib Require Import ZArith.
+From Stdlib Require Import Lia.
+From Stdlib Require Import Streams.
+From ConCert.Examples.Wip.General Require Import Agreement.
+From ConCert.Examples.Wip.Ppl2026 Require Import Liveness.
 From ConCert.Execution Require Import Serializable.
 From ConCert.Examples.Wip.General Require Import Jonas2024_speclang.
-From ConCert.Examples.Wip.SimpleAuction Require Import SimpleAuction.
+From ConCert.Examples.Wip.Ppl2026 Require Import SimpleAuction.
 
 Section Theories.
   Context `{BaseTypes : ChainBase}.
@@ -79,15 +79,11 @@ Section FunctionalProperties.
     destruct msg; try discriminate.
     destruct m; unfold bid_step, withdraw_step, auction_end_step in Hreceive; cbn in *;
       try now contract_simpl.
-    - (* withdraw *) 
-      contract_simpl. 
-      destruct (highestBidder prev_state);
-      destruct (0 <? get_pendingReturns (ctx_from ctx) (pendingReturns prev_state));
-      contract_simpl; cbn; try inversion Hreceive; auto.
-    - (* AuctionEnd *)
-      contract_simpl.  
-      destruct (Nat.leb_spec (chain_height chain) (auctionEndTime prev_state)).
-      discriminate. lia.
+    (** withdraw **) 
+    contract_simpl. 
+    destruct (highestBidder prev_state);
+    destruct (0 <? get_pendingReturns (ctx_from ctx) (pendingReturns prev_state));
+    contract_simpl; cbn; try inversion Hreceive; auto.
   Qed.
 
   Lemma auctionEndTime_functional_invariant (chain : Chain)
@@ -171,14 +167,14 @@ Section SafetyProperties.
             inversion_deployed_contract. 
             (* rewrite deployed_state0 in *. inversion_subst deployed_state''. *)
             destruct msg_strong; [destruct m|].
-            ++ contract_simpl receive init.
+            ++ contract_simpl.
               ** rewrite_environment_equiv. cbn in *. rewrite address_eq_refl in *. 
                 inversion H3. rewrite deserialize_serialize. split; auto. 
                 rewrite Hstate_eq in *. inversion_subst H0. auto. 
               ** rewrite_environment_equiv. cbn in *. rewrite address_eq_refl in *.
                 discriminate.
             ++ (* withdraw *) 
-              contract_simpl receive init.
+              contract_simpl.
               ** rewrite_environment_equiv. cbn in *. rewrite address_eq_refl in *. 
                 inversion H2. rewrite deserialize_serialize. split; auto. 
                 destruct (0 <? get_pendingReturns from_addr (pendingReturns prev_state_strong)); 
@@ -186,7 +182,7 @@ Section SafetyProperties.
               ** rewrite_environment_equiv. cbn in *. rewrite address_eq_refl in *.
                 discriminate.
             ++ (* AuctionEnd *) 
-              contract_simpl receive init.
+              repeat contract_simpl.
               ** rewrite_environment_equiv. cbn in *. rewrite address_eq_refl in *.
                 inversion_subst H4. 
                 rewrite deserialize_serialize. split; auto. rewrite <- end_eq'. 
@@ -194,7 +190,7 @@ Section SafetyProperties.
               ** rewrite_environment_equiv. cbn in *. rewrite address_eq_refl in *.
                 discriminate. 
             ++ (* None *) 
-              contract_simpl receive init.            
+              contract_simpl.            
           -- exists cstate''. rewrite_environment_equiv. cbn. rewrite address_eq_ne; auto. 
     - (* invalid *)
       exists cstate'. rewrite_environment_equiv. cbn. split; auto.
@@ -303,7 +299,7 @@ Section LivenessProperties.
       specialize (contract_preserve reach deployed trace) as (deployed' & cstate & deployed_state).
       rewrite deployed_state in *. inversion_subst Hrank1.
       intros * Hstart Hpath.
-      specialize (chain_height_increase bstate (S (chain_height bstate))
+      edestruct (chain_height_increase bstate (S (chain_height bstate))
         ltac:(auto) ltac:(lia)) as (n & increase_height); eauto.
       exists n, (S (auctionEndTime cstate) - S (chain_height bstate))%nat.
       split; only 2: lia.
@@ -422,7 +418,7 @@ Section LivenessProperties.
       rewrite deployed_state in *. inversion_subst Hrank1.
       intros * Hstart' Hpath'.
       
-      specialize (chain_height_increase bstate (S (chain_height bstate))
+      edestruct (chain_height_increase bstate (S (chain_height bstate))
         ltac:(auto) ltac:(lia)) as (n & increase_height); eauto.
       
       exists n, (S (auctionEndTime cstate) - S (chain_height bstate))%nat.
@@ -505,290 +501,4 @@ Section LivenessProperties.
   Qed.
 
 End LivenessProperties.
-
-Section Wip. 
-  
-
-
-  Definition close caddr : ChainState -> ChainState -> Prop :=
-    fun _ st => 
-      exists (cstate : State), 
-        contract_state st caddr = Some cstate /\
-        cstate.(ended) = true.
-  
-  Definition post (contract : Contract Setup Msg State Error) (msg : option Msg)
-                 (prev next : ChainState) (ctx : ContractCallContext) 
-                 acts
-                 : Prop :=
-    reachable_action_trace prev /\
-    inhabited (ActionChainStep prev next) /\
-    prev.(chain_state_queue) = (build_act ctx.(ctx_limit) ctx.(ctx_origin) ctx.(ctx_from) 
-      (match msg with
-          | None => act_transfer ctx.(ctx_contract_address) ctx.(ctx_amount)
-          | Some m => act_call ctx.(ctx_contract_address) ctx.(ctx_amount) ((@serialize Msg _) m)
-        end)) 
-      :: acts /\
-    (* address_is_contract ctx.(ctx_contract_address) = true. *)
-    env_contracts prev ctx.(ctx_contract_address) = Some (contract : WeakContract).
-
-  Definition enabled_pred_forall (contract : Contract Setup Msg State Error)
-                 (c : ChainState -> ChainState -> Prop)
-                 (st : ChainState) :=
-    forall prev ctx (acts : list Action),
-      ActionChainStep prev st ->
-      valid_token_ctx st ctx ->
-      exists (msg : option Msg),
-        enabled contract msg prev ctx /\
-        post contract msg prev st ctx acts /\ 
-        c prev st.
-
-  
-
-  Lemma enabled_close (bstate : ChainState) caddr :
-    reachable_action_trace bstate ->
-    env_contracts bstate caddr = Some (contract : WeakContract) ->
-    exists (cstate : State),
-      contract_state bstate caddr = Some cstate /\
-      (bstate.(chain_height) > cstate.(auctionEndTime))%nat ->
-      (enabled_pred_forall SimpleAuction.contract (close caddr)) bstate.
-  Proof.
-    intros (origin & reach & [action_trace]) deployed.
-    destruct reach as [trace].
-    remember empty_state; induction trace; subst.
-    {
-      destruct (action_trace_step action_trace) as [|(mid & [step] & [action_trace'])]; subst; cbn in *; try congruence.
-      destruct_action_chain_step. cbn in *. congruence.
-    }
-
-    
-    assert (
-      preserve_through_action_trace : forall st1 st2
-            (trace : ChainTrace empty_state st1)
-            (action_trace : ActionChainTrace st1 st2),
-        env_contracts st2 caddr = Some (contract : WeakContract) ->
-        exists (cstate : State), 
-          contract_state st2 caddr = Some cstate /\
-          (chain_height st2 > auctionEndTime cstate)%nat ->
-          enabled_pred_forall contract (close caddr) st2
-    ).
-    {
-      clear trace l action_trace deployed IHtrace.
-      intros st1 st2 trace' action_trace' contract_deployed'.
-      remember st1; induction action_trace' as [|? at_mid at_to action_trace' IHat at_step]; 
-        subst; cbn in *; auto.
-      {
-        (* clnil *)
-      
-    
-
-  Abort.
-
-  Definition enabled_forall (contract : Contract Setup Msg State Error) (msg : option Msg)
-                 (st : ChainState) : Prop :=
-    forall ctx,
-      valid_token_ctx st ctx ->
-      env_contracts st ctx.(ctx_contract_address) = Some (contract : WeakContract) ->
-      pre contract msg st ctx (List.tl st.(chain_state_queue)).
-
-  Definition pre (contract : Contract Setup Msg State Error) (msg : option Msg)
-                 (st : ChainState) (ctx : ContractCallContext) acts
-                  : Prop :=
-    let limit := ctx.(ctx_limit) in
-    let origin_addr := ctx.(ctx_origin) in
-    let from_addr := ctx.(ctx_from) in
-    let caddr := ctx.(ctx_contract_address) in
-    let amount := ctx.(ctx_amount) in
-    reachable_action_trace st ->
-    st.(chain_state_queue) = (build_act limit origin_addr from_addr
-      (match msg with
-          | None => act_transfer caddr amount
-          | Some m => act_call caddr amount ((@serialize Msg _) m)
-        end)) 
-      :: acts ->
-    (0 < limit)%nat /\
-    (0 <= amount)%Z /\
-    (env_account_balances st from_addr >= amount)%Z /\
-    env_contracts st caddr = Some (contract : WeakContract) /\
-    exists (cstate : State) (new_cstate : State) (new_acts : list ActionBody),
-      contract_state st caddr = Some cstate /\ 
-      receive  
-          (transfer_balance ctx.(ctx_from) caddr ctx.(ctx_amount) st) 
-          (* (ctx<|ctx_contract_balance := 
-              if (address_eqb from_addr caddr)
-                  then (env_account_balances st caddr)
-                  else ((env_account_balances st caddr) + amount)%Z|>) *)
-          {| ctx_origin := origin_addr;
-             ctx_from := from_addr;
-             ctx_contract_address := caddr;
-             ctx_contract_balance := if (address_eqb from_addr caddr)
-                  then (env_account_balances st caddr)
-                  else ((env_account_balances st caddr) + amount)%Z;
-             ctx_amount := amount;
-             ctx_limit := limit
-          |}
-          cstate msg
-        = Ok (new_cstate, new_acts).
-
-  
-
-
-
-  Definition claim caddr : ChainState -> Prop :=
-    fun st => 
-      forall ctx acts,
-      valid_token_ctx st ctx ->
-      exists (cstate : State), 
-        contract_state st caddr = Some cstate /\
-        ctx.(ctx_from) = cstate.(beneficiary) ->
-        pre contract (Some AuctionEnd) st ctx acts.
-
-  Lemma seller_classical_liveness bstate caddr :
-    reachable bstate ->
-    env_contracts bstate caddr = Some (contract : WeakContract) ->
-    pAF (claim caddr) bstate.
-  Proof.
-    intros reach deployed.
-    specialize (deployed_contract_state_typed deployed reach) as (cstate & deployed_state).
-    pose (f := fun (_ : Address) (st : ChainState) => 
-      (cstate.(auctionEndTime) - st.(chain_height))%nat).
-    pose (P_pre := fun (caddr : Address) (st : ChainState) => 
-      env_contracts st caddr = Some (contract : WeakContract)).
-    unfold pAF.
-    eapply (Liveness_rank_nat) with (f := f) (P_pre := P_pre); eauto.
-    - (* decrease *)
-      admit.
-    - (* eventually *) 
-      unfold claim.
-      intros * bottom * valid_ctx.
-      assert (reach_th : reachable_through bstate st). admit.
-      
-      unfold pre. 
-      
-
-
-
-
-
-
-    
-
-  Lemma enabled_close' (bstate : ChainState) caddr :
-    reachable_action_trace bstate ->
-    env_contracts bstate caddr = Some (contract : WeakContract) ->
-    exists (cstate : State),
-      (bstate.(chain_height) > cstate.(auctionEndTime))%nat ->
-      pAF (enabled_pred_forall SimpleAuction.contract (close caddr)) bstate.
-
-  Lemma auctionEndTime_invariant {bstate caddr} 
-      (trace : ChainTrace empty_state bstate) :
-    env_contracts bstate caddr = Some (contract : WeakContract) ->
-    exists cstate dep,
-      deployment_info Setup trace caddr = Some dep /\
-      contract_state bstate caddr = Some cstate /\
-      cstate.(auctionEndTime) = dep.(deployment_setup).(biddingTime).
-  Proof.
-    contract_induction; intros; auto.
-    - (* dep *)
-      cbn in *. contract_simpl receive init. cbn.
-  Admitted.
-
-  
-
-
-  Lemma wip_eventually_claim : 
-    forall (caddr : Address) (bstate_from : ChainState),
-      reachable bstate_from ->
-      env_contracts bstate_from caddr = Some (contract : WeakContract) ->
-      (exists cstate, 
-        contract_state bstate_from caddr = Some cstate /\
-        (bstate_from.(chain_height) < cstate.(auctionEndTime))%nat) ->
-      forall (str : ChainStream),
-        path str ->
-        Str_nth 0 str = bstate_from ->
-        exists n, 
-          (fun caddr (st : ChainState) =>
-           exists cstate, 
-             contract_state st caddr = Some cstate /\
-             can_close caddr cstate.(beneficiary) st) 
-          caddr 
-          (Str_nth n str).
-  Proof.
-    pose (f := fun caddr (st : ChainState) =>
-      match (contract_state st caddr) with
-      | Some cstate => Some (cstate.(auctionEndTime) - st.(chain_height))%nat
-      | None => None
-      end).
-    intros * reach deployed no_end.
-    eapply (Liveness_rank_wf_opt_strong (A := nat)) 
-      with (f := f) (P_pre := fun _ _ => True) (bot := 0%nat); eauto.
-    apply lt_wf.
-    apply Nat.eq_dec.
-    intros _. 
-    - (* start *)
-      specialize (deployed_contract_state_typed deployed)
-        as (cstate & deployed_state); auto.
-      exists (auctionEndTime cstate - chain_height bstate_from)%nat.
-      unfold f. rewrite deployed_state. auto. 
-    - (* eventually decrease *)
-      intros * reach_th Hrank1 no_bot.
-      unfold f in Hrank1. 
-      assert (reach' : reachable bstate) by (eapply reachable_through_reachable; eauto).
-      destruct reach_th as (_ & [trace]). 
-      specialize (contract_preserve reach deployed trace) as (deployed' & cstate & deployed_state).
-      rewrite deployed_state in *. inversion_subst Hrank1.
-      intros * Hstart Hpath.
-      specialize (chain_height_increase bstate (S (chain_height bstate))
-        ltac:(auto) ltac:(lia)) as (n & increase_height); eauto.
-      exists n, (auctionEndTime cstate - S (chain_height bstate))%nat.
-      split.
-      + unfold f. 
-        specialize (stream_n_trace bstate str n) as [trace']; auto.
-        specialize (contract_preserve reach' deployed' trace')
-           as (deployed'' & cstate' & deployed_state').
-        rewrite deployed_state'. rewrite increase_height.
-        destruct reach as [reach].
-        assert (inhabited (ChainTrace empty_state bstate)) as [trace_bstate].
-        eapply chain_trace_trans; eauto.
-        specialize (auctionEndTime_invariant trace_bstate deployed')
-          as (cstate'0 & dep & Hdep & deployed_state0 & end_eq). 
-        rewrite deployed_state0 in *. inversion_subst deployed_state. 
-        rewrite end_eq.
-        specialize (auctionEndTime_invariant (clist_app trace_bstate trace') deployed'')
-          as (cstate''0 & dep' & Hdep' & deployed_state'0 & end_eq').
-        rewrite deployed_state'0 in *. inversion_subst deployed_state'.
-        rewrite end_eq'. 
-        specialize (deployment_info_invariant trace_bstate deployed')
-          as (dep0 & Hdep0 & dep_info_eq).
-        rewrite Hdep in *. inversion Hdep0. subst dep0. clear Hdep0.
-        rewrite dep_info_eq in Hdep'. inversion_subst Hdep'. auto.
-      + lia.
-    - (* finally *)
-      unfold can_close, f.
-      intros * reach_th Hbot.
-      (* specialize (deployed_contract_state_typed deployed)
-        as (cstate & deployed_state); auto. *)
-      destruct reach_th as (_ & [trace]). 
-      specialize (contract_preserve reach deployed trace)
-        as (deployed_st & cstate & deployed_state_st).  
-      exists cstate. split; auto. 
-      intros * queue valid no_pay seller_addr caddr_eq. 
-      unfold pre. 
-      split; auto. 
-      apply reachable_action_trace_reahcable_in_action_trace_iff.
-      exists st. apply reachable_in_action_trace_refl. destruct reach as [reach]. 
-      eapply chain_trace_trans; eauto.
-      split; auto. 
-      split; auto. 
-      split; auto. 
-      rewrite <- caddr_eq. auto. 
-      exists cstate,
-        (setter_from_getter_State_ended (fun _ : bool => true) cstate),
-         [act_transfer (beneficiary cstate) (highestBid cstate)]. 
-      split; auto. 
-      rewrite <- caddr_eq. auto.
-      evaluate_receive.
-  Abort. 
-
-End Wip.
-
 End Theories.

@@ -1,5 +1,6 @@
 (** * Definitions shared among the examples *)
 
+
 From ConCert.Utils Require Import Automation.
 From ConCert.Utils Require Import Extras.
 From ConCert.Examples.Wip.General Require Import Blockchain_modify.
@@ -7,7 +8,7 @@ From ConCert.Execution Require Import Containers.
 From ConCert.Execution Require Import Monad.
 From ConCert.Execution Require Import ResultMonad.
 From Stdlib Require Import List. Import ListNotations.
-From Stdlib Require Import ZArith_base.
+From Stdlib Require Import ZArith.
 
 (** A type of finite maps (dictionaries) with addresses as keys.
 Basically, it's just a specilization of [FMap] to [Address] as keys.

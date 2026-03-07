@@ -10,17 +10,16 @@
 (* pragma solidity ^0.8.4; *)
 (* contract SimpleAuction { *)
 
-From Coq Require Import ZArith_base.
-From Coq Require Import List.
-From Coq Require Import Bool.
+From Stdlib Require Import ZArith.
+From Stdlib Require Import List.
+From Stdlib Require Import Bool.
 Import ListNotations.
-
 From ConCert.Utils Require Import Automation Extras.
-From ConCert.Examples.Wip.General Require Import Blockchain_modify_2.
+From ConCert.Examples.Wip.General Require Import Blockchain_modify.
+From ConCert.Examples.Wip.General Require Import ContractCommon_modify.
 From ConCert.Execution Require Import Monad.
 From ConCert.Execution Require Import ResultMonad.
 From ConCert.Execution Require Import Serializable.
-From ConCert.Examples.Wip.General Require Import ContractCommon_modify_2.
 From ConCert.Utils Require Import RecordUpdate.
 
 Open Scope Z_scope.
@@ -81,7 +80,7 @@ Section SimpleAuction.
   | Withdraw
   | AuctionEnd.
 
-  MetaCoq Run (make_setters State).
+  MetaRocq Run (make_setters State).
 
   (* ---- Serialization (typical in ConCert examples) ---- *)
   Section Serialization.

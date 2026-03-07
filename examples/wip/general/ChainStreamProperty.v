@@ -7,7 +7,7 @@
 From ConCert.Examples.Wip.General Require Import Blockchain_modify.
 From ConCert.Examples.Wip.General Require Import ChainTraceProperty.
 From ConCert.Examples.Wip.General Require Import BuildUtils_modify.
-From Stdlib Require Import ZArith_base.
+From Stdlib Require Import ZArith.
 From Stdlib Require Import List. Import ListNotations.
 From Stdlib Require Import Streams.
 From Stdlib Require Import Basics.

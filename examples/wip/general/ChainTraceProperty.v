@@ -1,3 +1,9 @@
+
+
+
+
+
+
 From Stdlib Require Import Lia.
 From Stdlib Require Import List. Import ListNotations.
 From Stdlib Require Import Logic.Decidable.
@@ -27,6 +33,13 @@ Proof.
     induction (rev l2); auto. cbn in *. inversion H. auto.
 Qed.
 
+Local Lemma list_cons_not {T : Type} {x : T} {l : list T} :
+  l <> x :: l.
+Proof.
+  intros H. assert (Hlen : length l = length (x :: l)) by (f_equal; auto). 
+  cbn in Hlen. lia.
+Qed.
+
 Local Ltac solve_list_contra :=
   match goal with
   | [H: ?l = ?x :: ?l |- _] => apply list_cons_not in H; auto
@@ -40,13 +53,15 @@ Local Ltac solve_list_contra :=
   | [H: (?x :: ?l') ++ ?l = ?l |- _] => apply eq_sym in H; apply list_app_nil in H; discriminate H
   end.
 
+
 Ltac rewrite_queue :=
   repeat
     match goal with
     | [H: chain_state_queue _ = _ |- _] => rewrite H in *
     end.
 
-  Ltac reach_induction :=
+
+Ltac reach_induction :=
   match goal with
   | trace : ChainTrace empty_state ?bstate |- _ =>
     cbn;
@@ -65,7 +80,7 @@ Ltac rewrite_queue :=
   end.
 
 
-  Ltac trace_induction :=
+Ltac trace_induction :=
   match goal with
   | trace : ChainTrace ?from ?to |- _ =>
     cbn;
@@ -79,7 +94,7 @@ Ltac rewrite_queue :=
     repeat (specialize (IH ltac:(auto)))]; auto
   end.
 
-  Ltac action_trace_induction :=
+Ltac action_trace_induction :=
   match goal with
   | trace : ActionChainTrace ?from ?to |- _ =>
     cbn;
@@ -96,6 +111,7 @@ Ltac rewrite_queue :=
   Ltac action_trace_induction_intermidiate :=
     match goal with
     | H : ActionChainTrace ?mid ?to |- _ =>
+        
         pattern to;
         match goal with
         | |- ?P to =>
@@ -120,7 +136,7 @@ Ltac rewrite_queue :=
     end.
 
 Section ChainTraceProperty.
-  Context {Base : ChainBase}.
+  Context {BaseTypes : ChainBase}.
 
   Lemma trace_step {from mid to} :
     ChainStep from mid ->
@@ -170,6 +186,10 @@ Section ChainTraceProperty.
     inhabited (ActionChainTrace from to).
   Proof. constructor. now eapply ChainedList.clist_app. Qed.
 
+  
+  (* Definition reachable_in_action_trace mid to := 
+    reachable mid /\ inhabited (ActionChainTrace mid to).  *)
+
   Lemma reachable_in_action_trace_refl {st} :
     reachable st ->
     reachable_in_action_trace st st. 
@@ -199,6 +219,7 @@ Section ChainTraceProperty.
     exact (snoc trace step).
   Qed.
 
+  
   Lemma contract_addr_format_in_action_trace {from to} (addr : Address) (wc : WeakContract) :
     reachable_in_action_trace from to ->
     env_contracts to addr = Some wc ->
@@ -441,7 +462,7 @@ Section BuildUtilsPart.
           bstate'
           (add_new_block_to_env {| block_height := S (chain_height bstate);
             block_slot := current_slot bstate + slot_incr;
-            block_finalized_height := finalized_height bstate;
+            block_finalized_height := finalized_height bstate;                     
             block_creator := creator;
             block_reward := reward; |} bstate)).
   Proof.
@@ -507,7 +528,7 @@ Section BuildUtilsPart.
       (exists bstate' header,
         reachable_through bstate bstate'
       /\ IsValidNextBlock header bstate
-      /\ (slot <= current_slot bstate')%nat
+      /\ (slot <= current_slot bstate')%nat  
       /\ chain_state_queue bstate' = []
       /\ EnvironmentEquiv
           bstate'
@@ -691,7 +712,7 @@ Section ListDrop.
   Proof.
     induction l1; cbn; try lia.
     destruct (f a); cbn; try lia.
-    rewrite app_length.
+    rewrite length_app.
     assert (length (list_drop f l2) <= length l2) by apply list_drop_le.
     lia.
   Qed.
@@ -744,7 +765,7 @@ Section ListDropFromContract.
     induction acts as [|a acts' IH]; simpl; [lia|].
     destruct (address_is_contract (act_from a)) eqn:B; cbn in *.
     - rewrite B. lia. (* eapply le_trans; [apply IH|]. eapply le_S, le_n. *)
-    - rewrite B. cbn. lia.
+    - rewrite B. cbn. lia.                                                
   Qed.
 
   Lemma list_drop_contract_contradiction act acts :
@@ -922,6 +943,12 @@ End ListDropFromContract.
 
   Local Hint Unfold reachable_in_action_trace : core.
 
+  
+  
+
+
+
+
   Axiom deploy_address_deterministic : 
     forall {prev : ChainState}
            {next1 next2 : ChainState}
@@ -946,6 +973,9 @@ End ListDropFromContract.
                       to_addr2 wc (transfer_balance from_addr to_addr2 amount prev))) ->    
       to_addr1 = to_addr2.
 
+
+   
+   
   Lemma action_step_weak_deterministic {from prev next1 next2} : 
     reachable_in_action_trace from prev ->
     ActionChainStep prev next1 ->
@@ -999,7 +1029,7 @@ End ListDropFromContract.
         * rewrite receive_some0 in *. inversion_subst receive_some.
           split.
           reflexivity. rewrite_queue; auto.
-      + 
+      +  
         inversion_subst act_eq; cbn in *.
         rewrite deployed0 in *. inversion_subst deployed.
         rewrite deployed_state0 in *. inversion_subst deployed_state. 
@@ -1165,8 +1195,8 @@ End ListDropFromContract.
       intros finish (queue_finish & [trace_finish]).
       specialize (action_trace_no_branch trace_finish trace1 reach_th)
         as [(st1' & trace_finish_1 & env_eq' & queue')
-           |(finish' & trace_1_finish & env_eq' & queue')].
-      + (* finish -> 1 *)
+           |(finish' & trace_1_finish & env_eq' & queue')]. 
+      + (* finish -> 1 *) (* contra *) 
         assert (reach_finish : reachable_in_action_trace st finish).
         { apply (reachable_in_action_trace_trans reach_th); auto. }
         destruct (action_trace_step trace_finish_1)
@@ -1357,7 +1387,7 @@ End ListDropFromContract.
           split. reflexivity. auto.
         * rewrite receive_some0 in *. inversion_subst receive_some.
           split. reflexivity. auto.
-      + 
+      +  
         inversion_subst queue_prev0; cbn in *.
         rewrite deployed0 in *. inversion_subst deployed.
         rewrite deployed_state0 in *. inversion_subst deployed_state. 
@@ -1402,6 +1432,8 @@ End ListDropFromContract.
       as (? & ?); cbn; try lia.
     apply at_equiv_snoc; auto.
   Qed. 
+
+
 
   Fixpoint clist_length {Point} {Link} {from to} 
       (cl : ChainedList Point Link from to) : nat :=
@@ -1625,7 +1657,7 @@ End ListDropFromContract.
         * rewrite receive_some0 in *. inversion_subst receive_some.
           split.
           reflexivity. rewrite_queue; auto.
-      + 
+      +  
         inversion_subst act_eq; cbn in *.
         rewrite deployed0 in *. inversion_subst deployed.
         rewrite deployed_state0 in *. inversion_subst deployed_state. 
@@ -1965,7 +1997,7 @@ End ListDropFromContract.
         * rewrite receive_some0 in *. inversion_subst receive_some.
           split.
           reflexivity. rewrite_queue; auto.
-      + 
+      +  
         inversion_subst act_eq; cbn in *.
         rewrite deployed0 in *. inversion_subst deployed.
         rewrite deployed_state0 in *. inversion_subst deployed_state. 
@@ -2092,6 +2124,12 @@ End ListDropFromContract.
     exists to2, (snoc action_trace2' step2). cbn. 
     split; auto.  
   Qed.
+
+  
+
+
+
+
 
   Lemma action_trace_finish_equiv_strong
       {from1 from2 to1 to2 : ChainState} {act} :
@@ -2312,6 +2350,54 @@ End ListDropFromContract.
       rewrite_queue. cbn in *; lia.
   Qed. 
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   Lemma trace_head_pattern_strong {from to}
       (trace : ChainTrace from to) :
     trace_length trace = 0 \/
@@ -2332,6 +2418,13 @@ End ListDropFromContract.
         rewrite Htrace.
         auto.
   Qed.
+
+  (* Ltac destruct_trace_head :=
+    match goal with
+    | trace : ChainTrace ?from ?to |- _ =>
+      destruct (trace_destruct_head trace) as [|(mid & [step] & [trace'])]
+        ; [subst|]
+    end. *)
 
   Ltac destruct_trace_head :=
     match goal with
@@ -2375,6 +2468,7 @@ End ListDropFromContract.
     now do 2 econstructor.
   Qed.
 
+  
   Lemma trace_gt_lt {from to} (trace : ChainTrace from to) :
     0 < trace_length trace ->
     chain_height from < chain_height to \/
@@ -2511,6 +2605,13 @@ End ListDropFromContract.
     rewrite <- height1 in *. rewrite_environment_equiv. lia. 
   Qed.
 
+  
+  Lemma trace_clnil {st} (trace : ChainTrace st st) : 
+    trace = clnil.
+  Proof.
+    destruct (trace_head_pattern_strong trace) as [|(mid & trace' & step)]. 
+  Abort.
+
   (* 20260205 *)
   Inductive ChainTraceEquiv
     : (forall {from1 from2 to1 to2}, 
@@ -2537,6 +2638,7 @@ End ListDropFromContract.
     exists trace_to, (clist_app reach trace_to). auto.
   Qed.
 
+  
   Lemma deployment_info_invariant 
        Setup `{Serializable Setup} (depinfo : DeploymentInfo Setup)
        caddr from to (trace : ChainTrace empty_state from) :

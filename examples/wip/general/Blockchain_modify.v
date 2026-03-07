@@ -1,3 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+
+
 (** This file defines blockchains, both a contract's view (which is
 more computational) and the semantics of executing smart contracts
 in a blockchain.
@@ -29,8 +41,7 @@ The next types deal with semantics.
 
 - The [Environment] type augments the Chain type with more information.
   [Environment] can be thought of as the information that a realistic blockchain
-  implementation would need to keep track of to implement operations.
-  For instance,
+  implementation would need to keep track of to implement operations. For instance,
   it is reasonable to assume that an implementation needs to access the state of
   contracts, but not to assume that it needs to store the full transaction history
   of all addresses.
@@ -75,6 +86,7 @@ Import ListNotations.
 
 Definition Amount := Z.
 Bind Scope Z_scope with Amount.
+
 Class ChainBase :=
   build_chain_base {
     Address : Type;
@@ -86,9 +98,11 @@ Class ChainBase :=
     address_serializable :: Serializable Address;
     address_is_contract : Address -> bool;
   }.
+
 Global Opaque Address address_eqb address_eqb_spec
               address_eqdec address_countable
               address_serializable.
+
 Declare Scope address_scope.
 Delimit Scope address_scope with address.
 Bind Scope address_scope with Address.
@@ -96,16 +110,19 @@ Infix "=?" := address_eqb (at level 70) : address_scope.
 
 Definition address_neqb `{ChainBase} (x y : Address) : bool :=
   negb (address_eqb x y).
+
 Definition address_not_contract `{ChainBase} (x : Address) : bool :=
   negb (address_is_contract x).
+
 Lemma address_eq_refl `{ChainBase} x :
   address_eqb x x = true.
 Proof. destruct (address_eqb_spec x x); auto; congruence. Qed.
+
 Lemma address_eq_ne `{ChainBase} x y :
   x <> y ->
   address_eqb x y = false.
 Proof.
-destruct (address_eqb_spec x y) as [->|]; tauto.
+  destruct (address_eqb_spec x y) as [->|]; tauto.
 Qed.
 
 Lemma address_eq_ne' `{ChainBase} x y :
@@ -114,19 +131,21 @@ Lemma address_eq_ne' `{ChainBase} x y :
 Proof.
   split; destruct (address_eqb_spec x y) as [->|]; (discriminate || tauto).
 Qed.
+
 Lemma address_eq_sym `{ChainBase} x y :
   address_eqb x y = address_eqb y x.
 Proof.
-destruct (address_eqb_spec x y) as [->|].
+  destruct (address_eqb_spec x y) as [->|].
   - now rewrite address_eq_refl.
   - rewrite address_eq_ne; auto.
 Qed.
+
 Lemma address_neqb_eq `{ChainBase} x y :
   address_neqb x y = false <->
   x = y.
 Proof.
   unfold address_neqb.
-rewrite Bool.negb_false_iff.
+  rewrite Bool.negb_false_iff.
   now destruct (address_eqb_spec x y).
 Qed.
 
@@ -142,21 +161,18 @@ Global Ltac destruct_address_eq :=
   repeat
     match goal with
     | [H: context[address_eqb ?a ?b] |- _] =>
-      try rewrite (address_eq_sym b a) in *;
-      destruct (address_eqb_spec a b)
+      try rewrite (address_eq_sym b a) in *; destruct (address_eqb_spec a b)
     | [|- context[address_eqb ?a ?b]] =>
-      try rewrite (address_eq_sym b a) in *;
-      destruct (address_eqb_spec a b)
+      try rewrite (address_eq_sym b a) in *; destruct (address_eqb_spec a b)
     | [H: context[address_neqb ?a ?b] |- _] =>
-      try unfold address_neqb in *;
-      destruct (address_eqb_spec a b)
+      try unfold address_neqb in *; destruct (address_eqb_spec a b)
     | [|- context[address_neqb ?a ?b]] =>
-      try unfold address_neqb in *;
-      destruct (address_eqb_spec a b)
+      try unfold address_neqb in *; destruct (address_eqb_spec a b)
     end.
 
 Section Blockchain.
   Context {Base : ChainBase}.
+
   (** This represents the view of the blockchain that a contract
   can access and interact with. *)
   Record Chain :=
@@ -182,7 +198,8 @@ Section Blockchain.
       (** Amount of currency passed in call *)
       ctx_amount : Amount;
     }.
-  MetaRocq Run (make_setters ContractCallContext).
+
+  MetaRocq Run (make_setters ContractCallContext). 
 
   (** Operations that a contract can return or that a user can use
   to interact with a chain. *)
@@ -203,16 +220,20 @@ Section Blockchain.
               SerializedValue (* state *) ->
               option SerializedValue (* message *) ->
               result (SerializedValue * list ActionBody) SerializedValue).
+
   Definition act_body_amount (ab : ActionBody) : Z :=
     match ab with
     | act_transfer _ amount
     | act_call _ amount _
     | act_deploy amount _ _ => amount
     end.
+
   Definition wc_init (wc : WeakContract) :=
     let (i, _) := wc in i.
+
   Definition wc_receive (wc : WeakContract) :=
     let (_, r) := wc in r.
+
   Record Action :=
     build_act {
       act_limit : nat;
@@ -223,6 +244,7 @@ Section Blockchain.
 
   Definition act_amount (a : Action) :=
     act_body_amount (act_body a).
+
   (** Represents a strongly-typed contract. This is what users will primarily
   use and interact with when they want deployment. We keep the weak contract
   only "internally" for blockchains, while any strongly-typed contract can
@@ -234,11 +256,13 @@ Section Blockchain.
         `{Serializable State}
         `{Serializable Error} :=
     build_contract {
+
       init :
         Chain ->
         ContractCallContext ->
         Setup ->
         result State Error;
+
       receive :
         Chain ->
         ContractCallContext ->
@@ -258,6 +282,7 @@ Section Blockchain.
                                 (r : result T E)
                                 : result T SerializedValue :=
     bind_error (fun err => serialize err) r.
+
   Definition contract_to_weak_contract
             {Setup Msg State Error : Type}
           `{Serializable Setup}
@@ -282,6 +307,7 @@ Section Blockchain.
               Ok (serialize new_state, acts)
             end in
         build_weak_contract weak_init weak_recv.
+
   Coercion contract_to_weak_contract : Contract >-> WeakContract.
 
   (** Deploy a strongly typed contract with some amount and setup *)
@@ -295,6 +321,7 @@ Section Blockchain.
             (contract : Contract Setup Msg State Error)
             (setup : Setup) : ActionBody :=
     act_deploy amount contract (serialize setup).
+
   (** The contract interface is the main mechanism allowing a deployed
   contract to interact with another deployed contract. This hides
   the ugly details of everything being SerializedValue away from contracts. *)
@@ -323,6 +350,7 @@ Section Blockchain.
 
 Section Semantics.
   MetaRocq Run (make_setters Chain).
+
   Definition add_balance
             (addr : Address)
             (amount : Amount)
@@ -342,6 +370,7 @@ Section Semantics.
     fun a => if (a =? addr)%address
             then Some state
             else map a.
+
   Record Environment :=
     build_env {
       env_chain :> Chain;
@@ -349,6 +378,7 @@ Section Semantics.
       env_contracts : Address -> option WeakContract;
       env_contract_states : Address -> option SerializedValue;
     }.
+
   (** Two environments are equivalent if they are extensionally equal *)
   Record EnvironmentEquiv (e1 e2 : Environment) : Prop :=
     build_env_equiv {
@@ -360,6 +390,7 @@ Section Semantics.
       contract_states_eq :
         forall addr, env_contract_states e1 addr = env_contract_states e2 addr;
     }.
+
   (** Strongly typed version of the contract state *)
   Definition contract_state
             {A : Type}
@@ -368,36 +399,33 @@ Section Semantics.
             (addr : Address)
             : option A :=
     env_contract_states env addr >>= deserialize.
+
   Global Program Instance environment_equiv_equivalence : Equivalence EnvironmentEquiv.
   Next Obligation.
     apply build_env_equiv; reflexivity.
   Qed.
   Next Obligation.
-    destruct H; apply build_env_equiv;
-    now symmetry.
+    destruct H; apply build_env_equiv; now symmetry.
   Qed.
   Next Obligation.
     destruct H, H0; apply build_env_equiv; try congruence.
   Qed.
+
   Global Instance environment_equiv_env_account_balances_proper :
     Proper (EnvironmentEquiv ==> eq ==> eq) env_account_balances.
-  Proof. repeat intro; subst; apply account_balances_eq;
-  assumption. Qed.
+  Proof. repeat intro; subst; apply account_balances_eq; assumption. Qed.
 
   Global Instance environment_equiv_env_contracts_proper :
     Proper (EnvironmentEquiv ==> eq ==> eq) env_contracts.
-  Proof. repeat intro; subst;
-  apply contracts_eq; assumption. Qed.
+  Proof. repeat intro; subst; apply contracts_eq; assumption. Qed.
 
   Global Instance environment_equiv_env_contract_states_proper :
     Proper (EnvironmentEquiv ==> eq ==> eq) env_contract_states.
-  Proof.
-  repeat intro; subst; apply contract_states_eq; assumption. Qed.
+  Proof. repeat intro; subst; apply contract_states_eq; assumption. Qed.
 
   Global Instance environment_equiv_env_chain_equiv_proper :
     Proper (EnvironmentEquiv ==> eq) env_chain.
-  Proof.
-  repeat intro; apply chain_eq; assumption. Qed.
+  Proof. repeat intro; apply chain_eq; assumption. Qed.
 
   Global Instance environment_equiv_contract_state_proper
     {A : Type} `{Serializable A} :
@@ -410,9 +438,11 @@ Section Semantics.
   Qed.
 
   MetaRocq Run (make_setters Environment).
+
   Definition transfer_balance (from to : Address) (amount : Amount) (env : Environment) :=
     env<|env_account_balances ::= add_balance to amount|>
       <|env_account_balances ::= add_balance from (-amount)|>.
+
   Definition add_contract (addr : Address) (contract : WeakContract) (env : Environment)
     : Environment :=
     env<|env_contracts ::=
@@ -420,27 +450,32 @@ Section Semantics.
         if (a =? addr)%address
         then Some contract
         else f a|>.
+
   Definition set_contract_state
             (addr : Address) (state : SerializedValue) (env : Environment) :=
     env<|env_contract_states ::= set_chain_contract_state addr state|>.
+
   (* set_chain_contract_state updates a map (function) by returning a
     new map (function). If this function is immediately applied to a
     key, then unfold it. *)
   Global Arguments set_chain_contract_state _ _ _ /.
+
   Ltac rewrite_environment_equiv :=
     match goal with
     | [H: EnvironmentEquiv _ _ |- _] => try rewrite H in *
     end.
+
   Ltac solve_proper :=
     apply build_env_equiv;
     cbn;
     repeat intro;
     repeat rewrite_environment_equiv;
     auto.
+
   Global Instance transfer_balance_proper :
     Proper (eq ==> eq ==> eq ==> EnvironmentEquiv ==> EnvironmentEquiv) transfer_balance.
   Proof.
-  repeat intro; subst.
+    repeat intro; subst.
     unfold transfer_balance, add_balance.
     solve_proper.
   Qed.
@@ -506,7 +541,7 @@ Section Semantics.
           new_env
           (set_contract_state
             to_addr state (add_contract
-              to_addr wc (transfer_balance from_addr to_addr amount prev_env))) ->
+                        to_addr wc (transfer_balance from_addr to_addr amount prev_env))) ->
         new_acts = [] ->
         ActionEvaluation prev_env act new_env new_acts
     | eval_call :
@@ -539,6 +574,7 @@ Section Semantics.
           new_env
           (set_contract_state to_addr new_state (transfer_balance from_addr to_addr amount prev_env)) ->
         ActionEvaluation prev_env act new_env new_acts.
+
   Global Arguments eval_transfer {_ _ _ _ }.
   Global Arguments eval_deploy {_ _ _ _ }.
   Global Arguments eval_call {_ _ _ _}.
@@ -548,30 +584,35 @@ Section Accessors.
           {pre : Environment} {act : Action}
           {post : Environment} {new_acts : list Action}
           (eval : ActionEvaluation pre act post new_acts).
+
   Definition eval_limit : nat :=
     match eval with
     | eval_transfer limit _ _ _ _ _ _ _ _ _ _ _
     | eval_deploy limit _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
     | eval_call limit _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => limit
-    end.
+    end.    
+
   Definition eval_origin : Address :=
     match eval with
     | eval_transfer _ origin _ _ _ _ _ _ _ _ _ _
     | eval_deploy _ origin _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
     | eval_call _ origin _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => origin
     end.
+
   Definition eval_from : Address :=
     match eval with
     | eval_transfer _ _ from _ _ _ _ _ _ _ _ _
     | eval_deploy _ _ from _ _ _ _ _ _ _ _ _ _ _ _ _ _
     | eval_call _ _ from _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => from
     end.
+
   Definition eval_to : Address :=
     match eval with
     | eval_transfer _ _ _ to _ _ _ _ _ _ _ _
     | eval_deploy _ _ _ to _ _ _ _ _ _ _ _ _ _ _ _ _
     | eval_call _ _ _ to _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => to
     end.
+
   Definition eval_amount : Amount :=
     match eval with
     | eval_transfer _ _ _ _ amount _ _ _ _ _ _ _
@@ -585,6 +626,7 @@ Section Theories.
           {pre : Environment} {act : Action}
           {post : Environment} {new_acts : list Action}
           (eval : ActionEvaluation pre act post new_acts).
+
   Lemma account_balance_post (addr : Address) :
     env_account_balances post addr =
     env_account_balances pre addr
@@ -605,6 +647,7 @@ Section Theories.
     rewrite address_eq_refl, address_eq_ne by auto.
     lia.
   Qed.
+
   Lemma account_balance_post_from :
     eval_from eval <> eval_to eval ->
     env_account_balances post (eval_from eval) =
@@ -615,6 +658,7 @@ Section Theories.
     rewrite address_eq_refl, address_eq_ne by auto.
     lia.
   Qed.
+
   Lemma account_balance_post_irrelevant (addr : Address) :
     addr <> eval_from eval ->
     addr <> eval_to eval ->
@@ -625,12 +669,16 @@ Section Theories.
     repeat rewrite address_eq_ne by auto.
     lia.
   Qed.
+
   Lemma chain_height_post_action : chain_height post = chain_height pre.
   Proof. destruct eval; rewrite_environment_equiv; auto. Qed.
+
   Lemma current_slot_post_action : current_slot post = current_slot pre.
   Proof. destruct eval; rewrite_environment_equiv; auto. Qed.
+
   Lemma finalized_height_post_action : finalized_height post = finalized_height pre.
   Proof. destruct eval; rewrite_environment_equiv; auto. Qed.
+
   Lemma contracts_post_pre_none contract :
     env_contracts post contract = None ->
     env_contracts pre contract = None.
@@ -640,13 +688,16 @@ Section Theories.
     cbn in *.
     destruct_address_eq; congruence.
   Qed.
+
   Lemma eval_amount_nonnegative : eval_amount eval >= 0.
   Proof. now destruct eval. Qed.
+
   Lemma eval_amount_le_account_balance :
     eval_amount eval <= env_account_balances pre (eval_from eval).
   Proof. now destruct eval. Qed.
 
 End Theories.
+
 Section Trace.
 
   Record BlockHeader :=
@@ -657,23 +708,27 @@ Section Trace.
       block_reward : Amount;
       block_creator : Address;
     }.
+
   Definition add_new_block_to_env
             (header : BlockHeader) (env : Environment) : Environment :=
-    env<|env_chain;
-    chain_height := block_height header|>
+    env<|env_chain; chain_height := block_height header|>
       <|env_chain; current_slot := block_slot header|>
-      <|env_chain;
-    finalized_height := block_finalized_height header|>
+      <|env_chain; finalized_height := block_finalized_height header|>
       <|env_account_balances ::=
           add_balance (block_creator header) (block_reward header)|>.
 
+  (* Todo: this should just be a computation. But I still do not *)
+  (* know exactly what the best way of working with reflect is *)
   Local Open Scope nat.
   Definition act_is_from_account (act : Action) : Prop :=
     address_is_contract (act_from act) = false.
+
   Definition act_origin_is_account (act : Action) : Prop :=
     address_is_contract (act_origin act) = false.
+
   Definition act_origin_is_eq_from (act : Action) : Prop :=
     address_eqb (act_origin act) (act_from act) = true.
+
   Record IsValidNextBlock (header : BlockHeader) (chain : Chain) : Prop :=
     build_is_valid_next_block {
       valid_height : block_height header = S (chain_height chain);
@@ -684,6 +739,7 @@ Section Trace.
       valid_creator : address_is_contract (block_creator header) = false;
       valid_reward : (block_reward header >= 0)%Z;
     }.
+
   Record ChainState :=
     build_chain_state {
       chain_state_env :> Environment;
@@ -692,6 +748,7 @@ Section Trace.
 
   MetaRocq Run (make_setters ChainState).
 
+  
   Inductive ActionChainStep (prev_bstate next_bstate : ChainState) :=
   | action_step_action :
       forall (act : Action)
@@ -701,6 +758,7 @@ Section Trace.
         ActionEvaluation prev_bstate act next_bstate new_acts ->
         next_bstate.(chain_state_queue) = new_acts ++ acts ->
         ActionChainStep prev_bstate next_bstate.
+
   Definition ActionChainTrace := ChainedList ChainState ActionChainStep.
 
   Lemma action_trace_step_trace {from mid to} :
@@ -711,18 +769,20 @@ Section Trace.
     intros step trace.
     generalize dependent step. generalize dependent from.
     induction trace.
-    - intros * step. constructor. eapply snoc; eauto.
-    apply clnil.
+    - intros * step. constructor. eapply snoc; eauto. apply clnil.
     - intros * step. 
       destruct (IHtrace from0); auto.
       constructor; eapply snoc; eauto.
   Qed.
+
   Ltac destruct_action_chain_step :=
     match goal with
     | [step: ActionChainStep _ _ |- _] =>
       destruct step as
         [?act ?acts ?new_acts ?queue_prev ?eval ?queue_new]
     end.
+
+  (* ChainStep with InternalChainTrace *) 
   Inductive ChainStep (prev_bstate : ChainState) (next_bstate : ChainState) :=
   | step_block :
       forall (header : BlockHeader),
@@ -734,7 +794,6 @@ Section Trace.
           next_bstate
           (add_new_block_to_env header prev_bstate) ->
         ChainStep prev_bstate next_bstate
-  
   | step_action :
       forall  (act : Action)
               (acts : list Action),
@@ -753,6 +812,7 @@ Section Trace.
           ActionChainTrace prev_bstate bstate -> 
                                                False) -> 
         ChainStep prev_bstate next_bstate.
+        
   Lemma origin_is_account acts :
     Forall act_is_from_account acts ->
     Forall act_origin_is_eq_from acts ->
@@ -762,9 +822,10 @@ Section Trace.
     induction Hall as [| a Ha]; intros Hall0; auto.
     inversion Hall0; subst.
     constructor; auto.
-  specialize (address_eqb_spec (act_origin a) (act_from a)) as Haddr;
+    specialize (address_eqb_spec (act_origin a) (act_from a)) as Haddr;
       unfold act_origin_is_eq_from in *; destruct Haddr; easy.
   Qed.
+
   Definition empty_state : ChainState :=
     {| chain_state_env :=
         {| env_chain :=
@@ -774,15 +835,17 @@ Section Trace.
             env_account_balances a := 0%Z;
             env_contract_states a := None;
             env_contracts a := None; |};
-    chain_state_queue := [] |}.
+      chain_state_queue := [] |}.
 
   (* The ChainTrace captures that there is a valid execution where,
   starting from one environment and queue of actions, we end up in a
   different environment and queue of actions. *)
   Definition ChainTrace := ChainedList ChainState ChainStep.
+
   (* Additionally, a state is reachable if there is a trace ending in this trace. *)
   Definition reachable (bstate : ChainState) : Prop := 
     inhabited (ChainTrace empty_state bstate).
+
   Definition outgoing_acts (state : ChainState) (addr : Address) : list ActionBody :=
     map act_body
         (filter (fun act => (act_from act =? addr)%address) (chain_state_queue state)).
@@ -855,6 +918,7 @@ Definition outgoing_txs
            (trace : ChainTrace from to)
            (addr : Address) : list Tx :=
   filter (fun tx => (tx_from tx =? addr)%address) (trace_txs trace).
+
 
 Record ContractCallInfo (Msg : Type) :=
   build_call_info
@@ -1093,6 +1157,7 @@ Section Theories.
     auto.
   Qed.
 
+  
   Lemma preserve_action_trace : 
     forall (from to : ChainState) 
            (P : forall (bstate : ChainState), Prop),
@@ -1152,11 +1217,11 @@ Section Theories.
       cbn in *.
       destruct_action_eval; rewrite_environment_equiv; subst; auto.
       all: cbn in *; specialize_hypotheses.
-      + eapply List.Forall_cons_iff; eauto.
-      + destruct (address_eqb contract to_addr); try congruence. eapply List.Forall_cons_iff; eauto.
-      + apply List.Forall_app.
+      + eapply Forall_cons_iff; eauto.
+      + destruct (address_eqb contract to_addr); try congruence. eapply Forall_cons_iff; eauto.
+      + apply Forall_app.
         assert (contract <> to_addr) by congruence.
-        split; [eapply new_acts_no_out_queue|eapply List.Forall_cons_iff]; eauto.
+        split; [eapply new_acts_no_out_queue|eapply Forall_cons_iff]; eauto.
     - (* Invalid User Action *)
       rewrite_environment_equiv.
         repeat
@@ -1195,15 +1260,15 @@ Section Theories.
         subst;
         cbn in *.
       + (* Transfer step, just use IH *)
-        eapply List.Forall_cons_iff; eauto.
+        eapply Forall_cons_iff; eauto.
       + (* Deploy step. First show that it is not to contract and then use IH. *)
         destruct_address_eq; try congruence.
-        eapply List.Forall_cons_iff; eauto.
+        eapply Forall_cons_iff; eauto.
       + (* Call. Show that it holds for new actions as it is from *)
         (* another contract, and use IH for remaining. *)
-        apply List.Forall_app.
+        apply Forall_app.
         assert (contract <> to_addr) by congruence.
-        split; [eapply new_acts_no_out_queue|eapply List.Forall_cons_iff]; eauto.
+        split; [eapply new_acts_no_out_queue|eapply Forall_cons_iff]; eauto.
   Qed.
 
   (* action_trace *)
@@ -1236,6 +1301,7 @@ Section Theories.
       try tauto; try congruence.
   Qed.
 
+   
   Lemma at_contract_not_disapear 
         contract from to (trace : ActionChainTrace from to) :
     reachable from ->
@@ -1666,6 +1732,7 @@ Section Theories.
       specialize_hypotheses; inversion IHtrace; subst; easy.
   Qed.
 
+   
   Lemma queue_from_account : forall (st : ChainState),
     reachable st ->
     Forall act_is_from_account st.(chain_state_queue).
@@ -1680,6 +1747,7 @@ Section Theories.
       subst. rewrite queue_prev in *. apply Forall_cons_iff in IH as [_ ?]; auto.
   Qed.
 
+  
   Definition incoming_calls_in_action_trace
             (Msg : Type) `{Serializable Msg}
             {from mid to : ChainState}
@@ -1747,6 +1815,7 @@ Section Theories.
         [(deployment_from depinfo, caddr, deployment_amount depinfo)].
   Proof.
     intros depinfo_eq calls_eq.
+    
     enough ((env_contracts bstate caddr = None ->
             incoming_txs trace caddr = [] /\
             deployment_info Setup trace caddr = None /\
@@ -2151,7 +2220,7 @@ Section Theories.
         destruct_action_chain_step; destruct_action_eval; rewrite_environment_equiv; cbn in *.
         - (* Evaluation: transfer *)
           clear init_case recursive_call_case nonrecursive_call_case.
-          specialize (IHat ltac:(auto) ltac:(auto) ltac:(auto) ltac:(auto) ltac:(auto) ltac:(auto)).
+          specialize (IHat ltac:(auto) ltac:(auto) ltac:(auto) ltac:(auto) ltac:(auto) ltac:(auto)). 
           destruct IHat as (depinfo' & cstate' & inc_calls' & -> & ? & -> & ?).
           exists depinfo', cstate', inc_calls'.
           rewrite_environment_equiv.
@@ -2399,9 +2468,11 @@ Section Theories.
       now fold (outgoing_txs trace caddr).
   Qed.
 
+  
   Definition reachable_in_action_trace mid to := 
     reachable mid /\ inhabited (ActionChainTrace mid to). 
 
+  
   Lemma contract_addr_format_action_trace {from to} (addr : Address) (wc : WeakContract) :
     reachable_in_action_trace from to ->
     env_contracts to addr = Some wc ->
@@ -2417,6 +2488,7 @@ Section Theories.
     destruct_address_eq; subst; cbn in *; auto.
   Qed.
 
+  
   Lemma account_balance_nonnegative_action_trace origin state addr :
     reachable_in_action_trace origin state ->
     env_account_balances state addr >= 0.
@@ -2653,7 +2725,7 @@ Section Theories.
           (env_account_balances bstate caddr)
           (outgoing_acts bstate caddr)
           inc_calls
-          (outgoing_txs_in_action_trace trace action_trace caddr).
+          (outgoing_txs_in_action_trace trace action_trace caddr). 
   Proof.
     intros 
           (* (establish_facts & at_establish_facts) *)
@@ -2677,10 +2749,37 @@ Section Theories.
       destruct (action_trace_step action_trace) as [|(? & [step] & [?])]; intros; subst; try solve [cbn in *; congruence].
       destruct_action_chain_step. cbn in *; congruence.
     }
+    (* specialize (IH ltac:(auto) ltac:(auto) ltac:(auto)). *)
+    (* specialize (establish_facts mid to ltac:(auto) ltac:(auto) tag_facts). *)
+
+    
+
+
     assert (
       preserve_through_action_trace : forall st1 st2
             (trace : ChainTrace empty_state st1)
             (action_trace : ActionChainTrace st1 st2),
+        (* (
+          env_contracts st1 caddr = Some (contract : WeakContract) ->
+          exists
+              (dep : DeploymentInfo Setup) 
+              (cstate : State) 
+              (inc_calls : list (ContractCallInfo Msg)),
+            match act_trace_deployment_info Setup action_trace caddr with
+            | Some dep_info => Some dep_info
+            | None => deployment_info Setup trace caddr
+            end = Some dep /\
+            match env_contract_states st1 caddr with
+            | Some val => deserialize val
+            | None => None
+            end = Some cstate /\
+            incoming_calls_in_action_trace Msg trace action_trace caddr = Some inc_calls /\
+            P (chain_height st1) (current_slot st1) (finalized_height st1) caddr dep
+              cstate (env_account_balances st2 caddr) (outgoing_acts st2 caddr)
+              inc_calls
+              (filter (fun tx : Tx => (tx_from tx =? caddr)%address)
+              (act_trace_txs action_trace ++ trace_txs trace))
+        ) -> *)
         env_contracts st2 caddr = Some (contract : WeakContract) ->
         exists
             (dep : DeploymentInfo Setup) 
@@ -2952,6 +3051,7 @@ Section Theories.
      as (dep & cstate & inc_calls & Hdep & Hcstate & Hinc & HP).
     exists dep, cstate, inc_calls. repeat (split; auto). 
   Qed.
+  
   
   Lemma convert_contract_induction
       {Setup Msg State Error : Type}
@@ -3238,7 +3338,7 @@ Local Ltac generalize_contract_statement_aux_action_trace
                (env_account_balances bstate caddr)
                (outgoing_acts bstate caddr)
                inc_calls 
-               (outgoing_txs_in_action_trace trace action_trace caddr));
+               (outgoing_txs_in_action_trace trace action_trace caddr)); 
   [let depinfo := fresh "depinfo" in
    let cstate := fresh "cstate" in
    let inc_calls := fresh "inc_calls" in
@@ -3269,6 +3369,13 @@ Local Ltac generalize_contract_statement_with_post_action_trace post :=
   intros;
   match goal with
   | [bstate_origin : ChainState, bstate : ChainState, caddr : Address |- _] =>
+    
+    (* try
+      match goal with
+      | [is_reachable : reachable bstate |- _] =>
+        let trace := fresh "trace" in
+        destruct is_reachable as [trace]
+      end; *)
     try
       match goal with
       | [is_reachable : reachable_in_action_trace bstate_origin bstate |- _] =>

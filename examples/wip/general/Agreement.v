@@ -1,23 +1,27 @@
 (* 
-  citation
+  CTL.v
+  ConCert の Safety と pAG の等価性など
+  便宜のため、CTL.v をコピー
+
+  ChainStreamPropertyに依存
 *)
 
 From ConCert.Examples.Wip.General Require Import Blockchain_modify.
 From ConCert.Examples.Wip.General Require Import BuildUtils_modify.
 From ConCert.Examples.Wip.General Require Import ChainTraceProperty.
 From ConCert.Examples.Wip.General Require Import ChainStreamProperty.
-From Coq Require Import ZArith_base.
-From Coq Require Import List. Import ListNotations.
-From Coq Require Import Streams.
-From Coq Require Import Basics.
-From Coq Require Import Lia.
+From Stdlib Require Import ZArith.
+From Stdlib Require Import List. Import ListNotations.
+From Stdlib Require Import Streams.
+From Stdlib Require Import Basics.
+From Stdlib Require Import Lia.
 From ConCert.Utils Require Import Automation.
 From ConCert.Utils Require Import Extras.
 From ConCert.Execution Require Import ChainedList.
 From ConCert.Execution Require Import Serializable.
 From ConCert.Execution Require Import ResultMonad.
 
-Require Import Coq.Logic.Decidable.
+From Stdlib Require Import Logic.Decidable.
 
 Section Characterizations.
 
@@ -123,6 +127,7 @@ Fixpoint eval (addr : Address) (phi : form) (st : ChainState) : Prop :=
     | ctl_EU x y => cEU (eval addr x) (eval addr y) st
     end.
 
+  (* ctl_impl が ~ Satisfies addr trace i x \/ Satisfies addr trace i y だと証明できない *)
   Lemma axK : forall (addr : Address) (s t : form) (st : ChainState),
     eval addr (s ->' t ->' s) st.
   Proof. simpl. auto. Qed.
@@ -143,6 +148,7 @@ Fixpoint eval (addr : Address) (phi : form) (st : ChainState) : Prop :=
     simpl. intros * Hs_t Hs. unfold cAX in *. auto.
   Qed.
 
+  (* chain_step_serialのために, reachableが必要 *)
   Lemma axSer : forall (addr : Address) (st : ChainState),
     reachable st ->
     eval addr (~' AX ctl_bottom) st.
@@ -160,6 +166,7 @@ Fixpoint eval (addr : Address) (phi : form) (st : ChainState) : Prop :=
     eval addr (s ->' AX (s AU t) ->' s AU t) st.
   Proof. simpl. unfold cAX. intros * Hs HAX. apply AUs; auto. Qed.
 
+  (* rule of inference *) (* 前件の書き方？ *)
   Lemma rMP : forall (addr : Address) (s t : form),
     (forall (st : ChainState), eval addr s st) ->
     (forall (st : ChainState), eval addr (s ->' t) st) ->
@@ -441,7 +448,7 @@ Section Agreement.
       generalize dependent pi.
       induction n as [|n' IHn'].
       - (* 0 *)
-        intros. rewrite Hn in *. subst. apply reachable_empty_state.
+        intros. rewrite Hn in *. subst. 
       - (* ind *) 
         intros.
         specialize (IHn' ltac:(auto) ltac:(auto) ltac:(auto)).
