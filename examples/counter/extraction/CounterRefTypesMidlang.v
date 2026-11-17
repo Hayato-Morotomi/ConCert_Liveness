@@ -7,14 +7,14 @@ From TypedExtraction Require Import Common.
 From TypedExtraction Require Import ElmExtract.
 From TypedExtraction Require Import PrettyPrinterMonad.
 From MetaRocq.Erasure.Typed Require Import Extraction.
-From MetaRocq.Erasure.Typed Require Import ResultMonad.
+From MetaRocq.Utils Require Import ResultMonad.
 From MetaRocq.Common Require Import Kernames.
 From MetaRocq.Template Require Import All.
 From Stdlib Require Import List.
 From Stdlib Require Import Lia.
 From Stdlib Require Import ZArith.
 
-Import MRMonadNotation.
+Import MonadNotation.
 
 
 #[local]
@@ -32,7 +32,7 @@ Definition midlang_translation_map :=
   (<%% @ctx_from %%>, "from");
   (<%% @Chain %%>, "ConCertChain");
   (<%% @ContractCallContext %%>, "ConCertCallContext");
-  (<%% @ConCert.Execution.Blockchain.ActionBody %%>, "ConCertAction");
+  (<%% @ConCert.Execution.BlockchainBase.ActionBody %%>, "ConCertAction");
   (<%% @ChainBase %%>, "ChainBaseWTF");
   (<%% @ctx_contract_address %%>, "contract_address")].
 

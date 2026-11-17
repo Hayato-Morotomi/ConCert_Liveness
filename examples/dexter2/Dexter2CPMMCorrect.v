@@ -158,13 +158,13 @@ Section Theories.
     | msg : option Msg |- _ => destruct msg
     | msg : Msg |- _ => destruct msg
     | msg : DexterMsg |- _ => destruct msg
-    | H : Blockchain.receive _ _ _ _ (Some (receive_total_supply_param _)) = Ok _ |- _ => now contract_simpl
+    | H : BlockchainBase.receive _ _ _ _ (Some (receive_total_supply_param _)) = Ok _ |- _ => now contract_simpl
     | H : receive_cpmm _ _ _ (Some (receive_total_supply_param _)) = Ok _ |- _ => now contract_simpl
-    | H : Blockchain.receive _ _ _ _ (Some (receive_metadata_callback _)) = Ok _ |- _ => now contract_simpl
+    | H : BlockchainBase.receive _ _ _ _ (Some (receive_metadata_callback _)) = Ok _ |- _ => now contract_simpl
     | H : receive_cpmm _ _ _ (Some (receive_metadata_callback _)) = Ok _ |- _ => now contract_simpl
-    | H : Blockchain.receive _ _ _ _ (Some (receive_is_operator _)) = Ok _ |- _ => now contract_simpl
+    | H : BlockchainBase.receive _ _ _ _ (Some (receive_is_operator _)) = Ok _ |- _ => now contract_simpl
     | H : receive_cpmm _ _ _ (Some (receive_is_operator _)) = Ok _ |- _ => now contract_simpl
-    | H : Blockchain.receive _ _ _ _ (Some (receive_permissions_descriptor _)) = Ok _ |- _ => now contract_simpl
+    | H : BlockchainBase.receive _ _ _ _ (Some (receive_permissions_descriptor _)) = Ok _ |- _ => now contract_simpl
     | H : receive_cpmm _ _ _ (Some (receive_permissions_descriptor _)) = Ok _ |- _ => now contract_simpl
     end.
   (* end hide *)
@@ -993,21 +993,21 @@ Section Theories.
         end) (outgoing_acts bstate caddr)).
   Proof.
     contract_induction; intros; cbn in *; auto.
-    - now apply list_relations.Forall_cons in IH as [_ IH].
+    - now apply list_relations.list.Forall_cons in IH as [_ IH].
     - destruct_message;
         rewrite_acts_correct;
         rewrite_state_eq;
         try (apply Forall_app; split);
         try apply IH; auto;
-        rewrite ?list_relations.Forall_cons, ?list_relations.Forall_nil;
+        rewrite ?list_relations.list.Forall_cons, ?list_relations.list.Forall_nil;
         try easy.
     - destruct_message;
         rewrite_acts_correct;
         rewrite_state_eq;
         try (apply Forall_app; split);
-        apply list_relations.Forall_cons in IH as [? IH];
+        apply list_relations.list.Forall_cons in IH as [? IH];
         try apply IH; auto;
-        rewrite ?list_relations.Forall_cons, ?list_relations.Forall_nil;
+        rewrite ?list_relations.list.Forall_cons, ?list_relations.list.Forall_nil;
         try easy.
     - now rewrite <- perm.
     - solve_facts.
@@ -1030,7 +1030,7 @@ Section Theories.
     cbn in receive_some.
     destruct_message;
       rewrite_acts_correct;
-      rewrite ?list_relations.Forall_cons, list_relations.Forall_nil;
+      rewrite ?list_relations.list.Forall_cons, list_relations.list.Forall_nil;
       easy.
   Qed.
 
@@ -1070,9 +1070,8 @@ Section Theories.
       lia.
     - cbn in IH.
       lia.
-    - instantiate (CallFacts := fun _ ctx _ _ _ =>
+    - set_call_facts (fun _ ctx _ _ _ =>
         (0 <= ctx_amount ctx)%Z).
-      unfold CallFacts in facts.
       cbn in receive_some.
       destruct_message;
         rewrite_acts_correct;
@@ -1136,8 +1135,8 @@ Section Theories.
     unfold no_transfers in no_transfer.
     assert (sum_zero : sumZ (fun act : ActionBody => act_body_amount act) (outgoing_acts bstate caddr) = 0%Z).
     - induction outgoing_acts; auto.
-      apply list_relations.Forall_cons in no_transfer as (no_transfer & no_transfers).
-      apply list_relations.Forall_cons in amount_zero as (amount_zero & amounts_zero).
+      apply list_relations.list.Forall_cons in no_transfer as (no_transfer & no_transfers).
+      apply list_relations.list.Forall_cons in amount_zero as (amount_zero & amounts_zero).
       destruct a; auto; cbn; rewrite IHl by auto;
         clear IHl no_transfers amounts_zero.
       + now destruct amount_zero as [-> | []].
@@ -1155,17 +1154,15 @@ Section Theories.
     intros.
     subst effective_balance.
     contract_induction; intros; auto.
-    - instantiate (DeployFacts := fun _ ctx =>
+    - set_deploy_facts (fun _ ctx =>
         (0 <= ctx_amount ctx)%Z).
-      unfold DeployFacts in facts.
       cbn in *.
       apply init_correct in init_some as (_ & -> & _).
       lia.
     - cbn in IH.
       lia.
-    - instantiate (CallFacts := fun _ ctx _ _ _ =>
+    - set_call_facts (fun _ ctx _ _ _ =>
         (0 <= ctx_amount ctx)%Z).
-      unfold CallFacts in facts.
       cbn in receive_some.
       destruct_message;
         rewrite_acts_correct;
@@ -1212,14 +1209,14 @@ Section Theories.
     intros.
     subst transfered_balance.
     contract_induction; intros; cbn in *; auto.
-    - instantiate (DeployFacts := fun _ ctx =>
+    - set_deploy_facts (fun _ ctx =>
         (0 <= ctx_amount ctx)%Z).
       auto.
     - lia.
-    - instantiate (CallFacts := fun _ ctx state out_acts _ =>
+    - set_call_facts (fun _ ctx state out_acts _ =>
         (0 <= ctx_amount ctx)%Z /\
         Z.of_N (xtzPool state) <= ctx_contract_balance ctx- sumZ (fun act => act_body_amount act) out_acts).
-      destruct facts.
+      split_facts in facts.
       destruct_message;
         rewrite_acts_correct;
         rewrite_receive_is_some;
@@ -1332,7 +1329,6 @@ Section Theories.
       destruct IH as (state & deployed_state & IH).
       rewrite outgoing_acts_after_block_nil; eauto.
       eapply contract_addr_format; eauto.
-      now constructor.
     - (* Action transfer *)
       destruct IH as (state & deployed_state & sum_eq).
       eexists.
@@ -1358,9 +1354,8 @@ Section Theories.
         rewrite outgoing_acts_after_deploy_nil; auto.
         rewrite queue_new.
         apply undeployed_contract_no_out_queue in not_deployed; auto.
-        * rewrite queue_prev in not_deployed.
-          now apply list_relations.Forall_cons in not_deployed.
-        * now constructor.
+        rewrite queue_prev in not_deployed.
+        now apply list_relations.list.Forall_cons in not_deployed.
       + (* Deploy other contract *)
         destruct IH as (state' & deployed_state' & sum_eq); auto.
         eexists.
@@ -1400,7 +1395,7 @@ Section Theories.
           cbn;
           rewrite ?address_eq_refl;
           cbn;
-          rewrite ?list_relations.Forall_cons;
+          rewrite ?list_relations.list.Forall_cons;
           repeat split; try easy;
           rewrite_receive_is_some;
           try easy.
@@ -1465,8 +1460,8 @@ Section Theories.
     contract_induction;
       intros; auto.
     - cbn.
-      now apply list_relations.Forall_cons in IH as [].
-    - instantiate (CallFacts := fun _ _ state out_acts _ =>
+      now apply list_relations.list.Forall_cons in IH as [].
+    - set_call_facts (fun _ _ state out_acts _ =>
         state.(lqtAddress) = null_address ->
           Forall (fun act_body =>
             match act_body with
@@ -1477,14 +1472,13 @@ Section Theories.
               end
             | _ => True
             end) out_acts).
-      unfold CallFacts in facts.
       cbn in receive_some.
       destruct_message;
         rewrite_acts_correct;
         rewrite_state_eq;
         apply Forall_app;
         split; auto;
-        rewrite ?list_relations.Forall_cons, ?list_relations.Forall_nil;
+        rewrite ?list_relations.list.Forall_cons, ?list_relations.list.Forall_nil;
         try easy.
       + cbn.
         repeat split; auto.
@@ -1504,7 +1498,7 @@ Section Theories.
         destruct_match eqn:contradiction; auto.
         destruct m; auto.
         now apply deserialize_balance_of_ne_mint_or_burn in contradiction.
-    - apply list_relations.Forall_cons in IH as [].
+    - apply list_relations.list.Forall_cons in IH as [].
       unfold CallFacts in facts.
       cbn in receive_some.
       destruct_message;
@@ -1512,7 +1506,7 @@ Section Theories.
         rewrite_state_eq;
         apply Forall_app;
         split; auto;
-        rewrite ?list_relations.Forall_cons, ?list_relations.Forall_nil;
+        rewrite ?list_relations.list.Forall_cons, ?list_relations.list.Forall_nil;
         try easy.
       + cbn.
         repeat split; auto.
@@ -1559,7 +1553,7 @@ Section Theories.
     clear trace deployed deployed_state.
     induction outgoing_acts.
     - reflexivity.
-    - apply list_relations.Forall_cons in mint_or_burn_to_lqt_addr as [mint_or_burn_to_lqt_addr IH%IHl].
+    - apply list_relations.list.Forall_cons in mint_or_burn_to_lqt_addr as [mint_or_burn_to_lqt_addr IH%IHl].
       clear IHl.
       cbn.
       rewrite <- IH. clear IH.
@@ -1597,7 +1591,7 @@ Section Theories.
         * (* Step block *)
           intros.
           destruct IHtrace as (state' & deployed_state' & sum_eq);
-              try rewrite_environment_equiv; auto.
+              try rewrite_environment_equiv in *; auto.
           cbn in *.
           rewrite deployed_state in deployed_state'.
           inversion deployed_state'.
@@ -1605,7 +1599,7 @@ Section Theories.
         * destruct_action_eval.
          -- (* Action transfer *)
             destruct IHtrace as (state' & deployed_state' & sum_eq);
-              try rewrite_environment_equiv; auto.
+              try rewrite_environment_equiv in *; auto.
             cbn in *.
             rewrite deployed_state in deployed_state'.
             inversion deployed_state'.
@@ -1616,7 +1610,7 @@ Section Theories.
             apply Forall_cons; auto.
             now inversion lqtAddr.
          -- (* Action deploy *)
-            rewrite_environment_equiv.
+            rewrite_environment_equiv in *.
             cbn in *.
             intros lqtAddr.
             destruct (address_eqb_spec caddr to_addr) as [<-|]; auto.
@@ -1637,7 +1631,7 @@ Section Theories.
               now inversion lqtAddr.
          -- (* Action call *)
             destruct IHtrace as (state' & deployed_state' & sum_eq);
-              try rewrite_environment_equiv; auto.
+              try rewrite_environment_equiv in *; auto.
             cbn in *.
             intros lqtAddr.
             destruct (address_eqb_spec caddr to_addr) as [<-|]; auto.
@@ -1714,7 +1708,7 @@ Section Theories.
         * (* Invalid action *)
           intros lqtAddr.
           destruct IHtrace as (state' & deployed_state' & sum_eq);
-            try rewrite_environment_equiv; auto.
+            try rewrite_environment_equiv in *; auto.
           cbn in *.
           rewrite deployed_state in deployed_state'.
           inversion deployed_state'.
@@ -1757,7 +1751,7 @@ Section Theories.
         split; auto.
         destruct_chain_step.
         * (* Step block *)
-          rewrite_environment_equiv.
+          rewrite_environment_equiv in *.
           destruct IHtrace as (state' & deployed_state' & sum_eq); auto.
           cbn in *.
           rewrite deployed_state in deployed_state'.
@@ -1765,17 +1759,17 @@ Section Theories.
         * destruct_action_eval.
          -- (* Action transfer *)
             destruct IHtrace as (state' & deployed_state' & sum_eq);
-              try rewrite_environment_equiv; auto.
+              try rewrite_environment_equiv in *; auto.
             cbn in *.
             rewrite deployed_state in deployed_state'.
             inversion deployed_state'.
             clear deployed_state'.
             subst.
             destruct_address_eq; auto.
-            apply list_relations.Forall_cons.
+            apply list_relations.list.Forall_cons.
             now split.
          -- (* Action deploy *)
-            rewrite_environment_equiv.
+            rewrite_environment_equiv in *.
             cbn in *.
             destruct (address_eqb_spec caddr to_addr) as [<-|]; auto.
           --- (* Deploy contract *)
@@ -1783,7 +1777,7 @@ Section Theories.
               unfold outgoing_txs in not_deployed.
               rewrite not_deployed.
               destruct_address_eq; auto.
-              now apply list_relations.Forall_cons.
+              now apply list_relations.list.Forall_cons.
           --- (* Deploy other contract *)
               destruct IHtrace as (state' & deployed_state' & sum_eq); auto.
               rewrite deployed_state in deployed_state'.
@@ -1791,10 +1785,10 @@ Section Theories.
               clear deployed_state'.
               subst.
               destruct_address_eq; auto.
-              now apply list_relations.Forall_cons.
+              now apply list_relations.list.Forall_cons.
          -- (* Action call *)
             destruct IHtrace as (state' & deployed_state' & sum_eq);
-              try rewrite_environment_equiv; auto.
+              try rewrite_environment_equiv in *; auto.
             cbn in *.
             destruct (address_eqb_spec caddr to_addr) as [<-|]; auto.
           --- (* Call contract *)
@@ -1891,7 +1885,7 @@ Section Theories.
               clear deployed_state'.
               subst.
               destruct_address_eq; auto.
-              apply list_relations.Forall_cons.
+              apply list_relations.list.Forall_cons.
               split; auto.
               cbn.
               edestruct outgoing_acts_all_mint_same_dest as (cstate & deployed_state' & out_acts_forall); eauto.
@@ -1908,7 +1902,7 @@ Section Theories.
               now destruct msg.
         * (* Invalid action *)
           destruct IHtrace as (state' & deployed_state' & sum_eq);
-            try rewrite_environment_equiv; auto.
+            try rewrite_environment_equiv in *; auto.
           cbn in *.
           rewrite deployed_state in deployed_state'.
           now inversion deployed_state'.
@@ -1937,7 +1931,7 @@ Section Theories.
     clear deployed deployed_state.
     induction (outgoing_txs trace caddr).
     - reflexivity.
-    - apply list_relations.Forall_cons in mint_or_burn_to_lqt_addr as [mint_or_burn_to_lqt_addr IH%IHl].
+    - apply list_relations.list.Forall_cons in mint_or_burn_to_lqt_addr as [mint_or_burn_to_lqt_addr IH%IHl].
       clear IHl.
       cbn.
       rewrite <- IH. clear IH.
@@ -2060,26 +2054,26 @@ Section Theories.
     - reflexivity.
   Qed.
 
-  Lemma deserialize_lqt_token_msg_right_inverse : forall x (y : Dexter2FA12.Msg),
+  Lemma deserialize_lqt_token_msg_sound : forall x (y : Dexter2FA12.Msg),
     (forall x' (y' : Address), deserialize x' = Some y' -> x' = serialize y') ->
     deserialize x = Some y ->
     x = serialize y.
   Proof.
-    intros * address_right_inverse deser_some.
+    intros * address_sound deser_some.
     Transparent deserialize serialize.
     cbn in *.
-    Local Hint Resolve deserialize_nat_right_inverse
-                       deserialize_N_right_inverse
-                       deserialize_int_right_inverse
-                       deserialize_unit_right_inverse
-                       deserialize_serialized_value_right_inverse : deser.
+    Local Hint Resolve deserialize_nat_sound
+                       deserialize_N_sound
+                       deserialize_Z_sound
+                       deserialize_unit_sound
+                       deserialize_SerializedValue_sound : deser.
     repeat (try match goal with
     | H : match _ with Some _ => _ | None => _ end = Some _ |- _ = _ => let H2 := fresh "H" in destruct_match eqn:H2 in H; [| discriminate]
     | H : match ?x with 0%nat => _ | S _ => _ end = Some _ |- _ = _ => destruct x; [| try discriminate]
     | H : (let (_, _) := ?p in _) = Some _ |- _ = _ => destruct p
     | H : Some _ = Some _ |- _ = _ => inversion_clear H
-    | H : extract_ser_value _ _ = @Some (interp_type ser_unit) ?i |- _ = _ => apply deserialize_unit_right_inverse in H as ->; destruct i
-    | H : @deserialize_product _ _ _ _ _ = Some _ |- _ = _ => apply deserialize_product_right_inverse in H as ->; try clear H
+    | H : extract_ser_value _ _ = @Some (interp_type ser_unit) ?i |- _ = _ => apply deserialize_unit_sound in H as ->; destruct i
+    | H : @deserialize_product _ _ _ _ _ = Some _ |- _ = _ => apply deserialize_product_sound in H as ->; try clear H
     | |- forall _ _, _ -> _ => intros * deser_some; cbn in *
     end; auto with deser).
     Opaque deserialize serialize.
@@ -2128,7 +2122,7 @@ Section Theories.
       specialize incomming_eq_outgoing as incoming_eq.
       edestruct incoming_eq as (? & inc_acts_lqt' & calls_eq);
         [| apply deployed_main | apply deployed_lqt |].
-      - intros. eapply deserialize_lqt_token_msg_right_inverse; auto.
+      - intros. eapply deserialize_lqt_token_msg_sound; auto.
       - setoid_rewrite inc_acts_lqt in inc_acts_lqt'.
         inversion inc_acts_lqt'.
         subst. clear inc_acts_lqt'.

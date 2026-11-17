@@ -8,7 +8,7 @@ From ConCert.Extraction Require Import CameLIGOPretty.
 From ConCert.Extraction Require Import Common.
 From ConCert.Extraction Require Import SpecializeChainBase.
 From MetaRocq.Erasure.Typed Require Import CertifyingInlining.
-From MetaRocq.Erasure.Typed Require Import ResultMonad.
+From MetaRocq.Utils Require Import ResultMonad.
 From MetaRocq.Erasure.Typed Require Import ExAst.
 From MetaRocq.Erasure.Typed Require Import Optimize.
 From MetaRocq.Erasure.Typed Require Import Extraction.
@@ -25,7 +25,7 @@ From MetaRocq.Utils Require Import bytestring.
 From MetaRocq.Common Require Import Kernames.
 From MetaRocq.Template Require Import TemplateMonad.
 
-Import MRMonadNotation ListNotations.
+Import MonadNotation ListNotations.
 
 Record CameLIGOMod {Base : ChainBase} (msg ctx setup storage operation error : Type) :=
   { lmd_module_name : string ;
@@ -252,7 +252,7 @@ Section LigoExtract.
     match annot_extract_template_env_specalize Σ seeds ignore with
     | Ok (eΣ; annots) =>
       (* dependencies should be printed before the dependent definitions *)
-      let ldef_list := List.rev (print_global_env TT eΣ annots) in
+      let ldef_list := List.rev' (print_global_env TT eΣ annots) in
       (* filtering empty strings corresponding to the ignored definitions *)
       let not_empty_str := (negb ∘ (String.eqb "") ∘ snd) in
 
@@ -386,7 +386,7 @@ Section LigoExtract.
     | Ok annot_env =>
     let '(eΣ; annots) := annot_env in
         (* dependencies should be printed before the dependent definitions *)
-    let ldef_list := List.rev (print_global_env TT eΣ annots) in
+    let ldef_list := List.rev' (print_global_env TT eΣ annots) in
       (* filtering empty strings corresponding to the ignored definitions *)
       let not_empty_str := (negb ∘ (String.eqb "") ∘ snd) in
 

@@ -4,11 +4,20 @@
 			"name": "ConCert-Root",
 			"path": "."
 		}
-	],
-	"settings": {
-		"vsrocq.args": [
-			"-Q", "examples/wip/general", "ConCert.Examples.Wip.General",
-			"-Q", "examples/wip/ppl2026", "ConCert.Examples.Wip.Ppl2026"
-		]
-	}
+	]
+	// ,
+	// "settings": {
+	// 	"vsrocq.args": [
+	// 		"-Q", "examples/wip/general", "ConCert.Examples.Wip.General",
+	// 		"-Q", "examples/wip/general1", "ConCert.Examples.Wip.General1",
+	// 		"-Q", "examples/boomerang", "ConCert.Examples.Boomerang",
+	// 		"-Q", "examples/wip/temporalLogic", "ConCert.Examples.Wip.TemporalLogic",
+	// 		"-Q", "examples/wip/piggybank", "ConCert.Examples.Wip.PiggyBank",
+	// 		"-Q", "examples/wip/simpleauction", "ConCert.Examples.Wip.SimpleAuction",
+	// 		"-Q", "examples/wip/others", "ConCert.Examples.Wip.Others",
+	// 		"-Q", "examples/wip/callLimit", "ConCert.Examples.Wip.CallLimit",
+	// 		"-Q", "examples/wip/fa2", "ConCert.Examples.Wip.FA2",
+	// 		"-Q", "examples/wip/dexter2", "ConCert.Examples.Wip.Dexter2"
+	// 	]
+	// }
 }

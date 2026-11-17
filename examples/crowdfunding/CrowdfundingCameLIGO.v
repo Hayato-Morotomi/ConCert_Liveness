@@ -14,7 +14,7 @@ From ConCert.Extraction Require Import CameLIGOExtract.
 From ConCert.Execution Require Import Blockchain.
 From ConCert.Execution Require Import ResultMonad.
 
-Import MRMonadNotation.
+Import MonadNotation.
 
 Open Scope Z.
 
@@ -50,9 +50,9 @@ Module Crowdfunding.
   Import CrowdfundingContract.Receive.
 
   (* We assume that there is a function converting addresses to [nat] *)
-  Parameter addr_to_nat : forall `{ChainBase}, Blockchain.Address -> nat.
+  Parameter addr_to_nat : forall `{ChainBase}, BlockchainBase.Address -> nat.
 
-  Definition to_simple_ctx_addr `{ChainBase} (addr : Blockchain.Address) : address_rocq :=
+  Definition to_simple_ctx_addr `{ChainBase} (addr : BlockchainBase.Address) : address_rocq :=
     if address_is_contract addr then ContractAddr_rocq (addr_to_nat addr) else
       UserAddr_rocq (addr_to_nat addr).
 
@@ -141,14 +141,5 @@ Section CrowdfundingExtraction.
   Definition TT_rename :=
     [ ("nil", "[]");
       ("mnil", "Map.empty") ].
-
-  Time MetaRocq Run
-       (CameLIGO_prepare_extraction [] TT_remap_crowdfunding (TT_rename ++ TT_rename_ctors_default) [] "cctx_instance" CF_MODULE).
-
-  Time Definition cameLIGO_crowdfunding := Eval vm_compute in cameLIGO_crowdfunding_prepared.
-
-  (** We redirect the extraction result for later processing and compiling with the CameLIGO compiler *)
-  Redirect "cameligo-extract/CrowdfundingCertifiedExtraction.mligo"
-  MetaRocq Run (tmMsg cameLIGO_crowdfunding).
 
 End CrowdfundingExtraction.

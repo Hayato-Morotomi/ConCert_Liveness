@@ -81,7 +81,7 @@ Section Theories.
     repeat match goal with
     | msg : option Msg |- _ => destruct msg
     | msg : Msg |- _ => destruct msg
-    | H : Blockchain.receive _ _ _ _ None = Ok _ |- _ => now contract_simpl
+    | H : BlockchainBase.receive _ _ _ _ None = Ok _ |- _ => now contract_simpl
     | H : receive_lqt _ _ _ None = Ok _ |- _ => now contract_simpl
     end.
   (* end hide *)
@@ -854,9 +854,9 @@ Section Theories.
       lia.
     - cbn in IH.
       lia.
-    - instantiate (CallFacts := fun _ ctx _ _ _ =>
-        (0 <= ctx_amount ctx)%Z /\ ctx_from ctx <> ctx_contract_address ctx).
-      destruct facts as (ctx_amount_positive & _).
+    - set_call_facts (fun _ ctx _ _ _ =>
+        (0 <= ctx_amount ctx)%Z /\ ctx_from ctx <> ctx_contract_address ctx)
+        as (ctx_amount_positive & _).
       simpl in *.
       apply contract_not_payable in receive_some as not_payable.
       apply new_acts_amount_zero in receive_some as amount_zero_new_acts.
@@ -873,7 +873,6 @@ Section Theories.
         | H : Some ?x = Some _ |- _ => inversion H; subst x; clear H
         end.
         eapply no_self_calls; eauto.
-        now constructor.
   Qed.
 
   Lemma contract_balance_bound : forall bstate caddr (trace : ChainTrace empty_state bstate),
@@ -895,7 +894,7 @@ Section Theories.
     induction (outgoing_acts bstate caddr).
     - reflexivity.
     - cbn.
-      apply list_relations.Forall_cons in act_amount_zero as (act_amount_zero & acts_amount_zero).
+      apply list_relations.list.Forall_cons in act_amount_zero as (act_amount_zero & acts_amount_zero).
       rewrite act_amount_zero, Z.add_0_l.
       now apply IHl.
   Qed.
@@ -928,7 +927,7 @@ Section Theories.
       | H : FMap.find ?x _ = Some _ |- context [ FMap.elements (FMap.add ?x _ _) ] => setoid_rewrite FMap.elements_add_existing; eauto
       | |- context [ FMap.add ?x _ (FMap.add ?x _ _) ] => setoid_rewrite FMap.add_add
       | H : FMap.find ?x _ = None |- context [ FMap.elements (FMap.add ?x _ _) ] => setoid_rewrite FMap.elements_add; eauto
-      | |- context [ FMap.remove ?x (FMap.add ?x _ _) ] => rewrite fin_maps.delete_insert_delete
+      | |- context [ FMap.remove ?x (FMap.add ?x _ _) ] => rewrite fin_maps.delete_insert_eq
       | |- context [ FMap.find ?x (FMap.partial_alter _ ?x _) ] => setoid_rewrite FMap.find_partial_alter
       | H : ?x' <> ?x |- context [ FMap.find ?x' (FMap.partial_alter _ ?x _) ] => setoid_rewrite FMap.find_partial_alter_ne; auto
       | H : ?x <> ?x' |- context [ FMap.find ?x' (FMap.partial_alter _ ?x _) ] => setoid_rewrite FMap.find_partial_alter_ne
@@ -991,12 +990,12 @@ Section Theories.
           * rewrite FMap.map_update_idemp.
             unfold FMap.update.
             apply maybe_sub_add in H1 as [[-> _] | ->].
-            -- now rewrite fin_maps.delete_notin.
+            -- now rewrite fin_maps.delete_id.
             -- FMap_simpl_step.
           * rewrite FMap.map_update_idemp.
             unfold FMap.update.
             apply maybe_sub_add in H1 as [[-> _] | ->].
-            -- now rewrite fin_maps.delete_notin.
+            -- now rewrite fin_maps.delete_id.
             -- FMap_simpl_step.
           * unfold FMap.update.
             edestruct maybe_cases as [[-> ?H] | [-> _]].
@@ -1042,12 +1041,12 @@ Section Theories.
             -- edestruct maybe_cases as [[-> ?H] | [-> _]].
               --- rewrite N.sub_0_le in H3; apply N.le_antisymm in H3; auto; subst.
                   rewrite <- N.add_0_r.
-                  rewrite fin_maps.delete_notin.
+                  rewrite fin_maps.delete_id.
                   2: FMap_simpl_step.
                   change 0 with ((fun '(_, v) => v) (from, 0)).
                   rewrite sumN_inv, fin_maps.map_to_list_delete; auto.
               --- rewrite N.sub_0_r.
-                  rewrite fin_maps.delete_notin.
+                  rewrite fin_maps.delete_id.
                   2: FMap_simpl_step.
                   FMap_simpl_step.
                   rewrite fin_maps.map_to_list_delete; auto.
@@ -1075,7 +1074,7 @@ Section Theories.
                   change 0 with ((fun '(_, v) => v) (to, 0)).
                   rewrite sumN_inv, fin_maps.map_to_list_delete.
                   2: FMap_simpl_step.
-                  rewrite fin_maps.delete_notin; auto.
+                  rewrite fin_maps.delete_id; auto.
               --- rewrite N.sub_0_r.
                   rewrite <- N.add_0_r.
                   change 0 with ((fun '(_, v) => v) (to, 0)).
@@ -1089,7 +1088,7 @@ Section Theories.
                   rewrite N.add_0_r.
                   rewrite fin_maps.map_to_list_delete.
                   2: FMap_simpl_step.
-                  rewrite fin_maps.delete_notin; auto.
+                  rewrite fin_maps.delete_id; auto.
               --- FMap_simpl_step.
                   2: FMap_simpl_step.
                   rewrite (sumN_split _ (to, value) (to, n)) by lia.
@@ -1104,14 +1103,14 @@ Section Theories.
             unfold FMap.update.
             edestruct maybe_cases as [[-> ->] | [-> _]].
             -- rewrite N.sub_0_r. cbn.
-               rewrite fin_maps.delete_notin.
+               rewrite fin_maps.delete_id.
                2: FMap_simpl_step.
-               rewrite fin_maps.delete_notin; auto.
+               rewrite fin_maps.delete_id; auto.
             -- edestruct maybe_cases as [[-> ?H] | [-> _]].
               --- rewrite N.sub_0_le in H3; apply N.le_antisymm in H3; auto; subst.
                   FMap_simpl_step.
                   2: FMap_simpl_step. cbn.
-                  rewrite fin_maps.delete_notin; auto.
+                  rewrite fin_maps.delete_id; auto.
               --- FMap_simpl_step.
                   2: FMap_simpl_step.
                   rewrite <- sumN_inv.
@@ -1156,7 +1155,7 @@ Section Theories.
             now rewrite sumN_inv, fin_maps.map_to_list_delete by assumption.
         * edestruct maybe_cases as [[-> quantity_eq] | [-> _]]; cbn;
           unfold sum_balances in IH.
-        -- rewrite fin_maps.delete_notin by auto.
+        -- rewrite fin_maps.delete_id by auto.
             cbn in *.
             lia.
         -- rewrite FMap.elements_add by auto. cbn in *.
@@ -1209,7 +1208,7 @@ Section Theories.
       + now rewrite FMap.find_add in addr_some.
       + now rewrite FMap.find_add_ne in addr_some.
     - intros IH receive_some initial_pool_positive * addr_some.
-      unfold Blockchain.receive in receive_some.
+      unfold BlockchainBase.receive in receive_some.
       simpl in receive_some.
       destruct msg. destruct m.
       + destruct t.
@@ -1254,7 +1253,7 @@ Section Theories.
       erewrite init_allowances_correct in addr_some by eauto.
       now rewrite FMap.find_empty in addr_some.
     - intros IH receive_some * addr_some.
-      unfold Blockchain.receive in receive_some.
+      unfold BlockchainBase.receive in receive_some.
       simpl in receive_some.
       destruct msg. destruct m.
       + destruct t.
@@ -1311,12 +1310,12 @@ Section Theories.
     contract_induction;
       intros; auto.
     - now cbn in *; erewrite init_total_supply_correct by eauto.
-    - instantiate (CallFacts := fun _ ctx state _ _ =>
+    - set_call_facts (fun _ ctx state _ _ =>
         total_supply state = sum_balances state /\
-        ctx_from ctx <> ctx_contract_address ctx).
-      destruct facts as (balances_eq_total_supply & _).
+        ctx_from ctx <> ctx_contract_address ctx)
+        as (balances_eq_total_supply & _).
       unfold callFrom in *.
-      unfold Blockchain.receive in receive_some.
+      unfold BlockchainBase.receive in receive_some.
       erewrite <- admin_constant; eauto.
       simpl in *.
       destruct msg. destruct m.
@@ -1343,14 +1342,12 @@ Section Theories.
     - solve_facts.
       split.
       + edestruct sum_balances_eq_total_supply as (? & ? & ?); eauto.
-        now constructor.
         easy.
       + rewrite deployed in *.
         match goal with
         | H : Some ?x = Some _ |- _ => inversion H; subst x; clear H
         end.
         eapply no_self_calls; eauto.
-        now constructor.
   Qed.
 
   Instance LqtFA12Token : LqtTokenInterface :=

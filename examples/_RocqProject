@@ -63,6 +63,8 @@ dexter2/Dexter2CPMMExtractLIGO.v
 dexter2/Dexter2Printers.v
 dexter2/Dexter2Gens.v
 dexter2/Dexter2Tests.v
+dexter2/extract/ExtractCPMMLIGO.v
+dexter2/extract/ExtractFA12LIGO.v
 
 -Q exchangeBuggy ConCert.Examples.ExchangeBuggy
 exchangeBuggy/ExchangeBuggy.v
@@ -79,14 +81,17 @@ iTokenBuggy/iTokenBuggyTests.v
 -Q cis1 ConCert.Examples.CIS1
 cis1/CIS1Spec.v
 cis1/CIS1Utils.v
-cis1/Cis1wccd.v
+cis1/CIS1wccd.v
 
 -Q stackInterpreter ConCert.Examples.StackInterpreter
 stackInterpreter/StackInterpreter.v
-stackInterpreter/StackInterpreterRustExtract.v
 stackInterpreter/StackInterpreterExtract.v
+stackInterpreter/StackInterpreterRustExtract.v
 stackInterpreter/StackInterpreterLiquidityExtract.v
 stackInterpreter/StackInterpreterLIGOExtract.v
+stackInterpreter/extract/ExtractStackInterpRust.v
+stackInterpreter/extract/ExtractStackInterpLiquidity.v
+stackInterpreter/extract/ExtractStackInterpLIGO.v
 
 -Q congress ConCert.Examples.Congress
 congress/Congress.v
@@ -120,6 +125,7 @@ boardroomVoting/BoardroomVotingZ.v
 boardroomVoting/BoardroomVotingTest.v
 boardroomVoting/BoardroomVotingExtractionCameLIGO.v
 boardroomVoting/BoardroomVotingExtractionLiquidity.v
+boardroomVoting/extract/ExtractBoardroomVotingLIGO.v
 
 -Q counter ConCert.Examples.Counter
 counter/Counter.v
@@ -141,6 +147,8 @@ crowdfunding/CrowdfundingDataExt.v
 crowdfunding/CrowdfundingExt.v
 crowdfunding/CrowdfundingCameLIGO.v
 crowdfunding/CrowdfundingLiquidity.v
+crowdfunding/extract/ExtractCrowdfundingCameLIGO.v
+crowdfunding/extract/ExtractCrowdfundingLiquidity.v
 
 -Q piggybank ConCert.Examples.PiggyBank
 piggybank/PiggyBank.v
@@ -149,17 +157,46 @@ piggybank/PiggyBankExtractLIGO.v
 piggybank/PiggyBankExtractLiquidity.v
 piggybank/PiggyBankExtractRust.v
 
--Q wip/general ConCert.Examples.Wip.General 
-wip/general/Blockchain_modify.v
-wip/general/ContractCommon_modify.v
-wip/general/ChainTraceProperty.v
-wip/general/BuildUtils_modify.v
-wip/general/ChainStreamProperty.v
-wip/general/Agreement.v
-wip/general/Jonas2024_speclang.v
-wip/general/MyBuildUtils.v
+# -Q boomerang ConCert.Examples.Boomerang
+# boomerang/Boomerang.v
 
--Q wip/ppl2026 ConCert.Examples.Wip.Ppl2026
-wip/ppl2026/Liveness.v
-wip/ppl2026/SimpleAuction.v
-wip/ppl2026/SimpleAuctionCorrect.v
+-Q wip/execution_model ConCert.Examples.Wip.ExecutionModel
+wip/execution_model/BoundedN.v
+wip/execution_model/ChainedList.v
+wip/execution_model/Circulation.v
+wip/execution_model/Containers.v
+wip/execution_model/Finite.v
+wip/execution_model/Monad.v
+wip/execution_model/OptionMonad.v
+wip/execution_model/ResultMonad.v
+wip/execution_model/ContractMonads.v
+wip/execution_model/SerializableBase.v
+wip/execution_model/SerializableInstances.v
+wip/execution_model/SerializableSound.v
+wip/execution_model/SerializableDerive.v
+wip/execution_model/Serializable.v
+wip/execution_model/BlockchainBase.v
+wip/execution_model/BlockchainTheories.v
+wip/execution_model/BlockchainInduction.v
+wip/execution_model/BlockchainBuilder.v
+wip/execution_model/Blockchain.v
+wip/execution_model/ContractCommon.v
+wip/execution_model/ChainStepDetermin.v
+wip/execution_model/ChainStepSerial.v
+wip/execution_model/MyTactics.v
+wip/execution_model/MyBuildUtils.v
+wip/execution_model/ChainedStream.v
+wip/execution_model/ChainStream.v
+wip/execution_model/ActionTrace.v
+wip/execution_model/InterContractCommunication.v
+
+-Q wip/ltl ConCert.Examples.Wip.LTL
+wip/ltl/MyLTLBase.v
+wip/ltl/MyLTL_G.v
+wip/ltl/MyLTL_U.v
+wip/ltl/MyLTLUtils.v
+wip/ltl/MyLTL.v
+
+-Q wip/countdown ConCert.Examples.Wip.CountDown
+wip/countdown/CountDownOneTime.v
+wip/countdown/CountDownOneTimeCorrect.v

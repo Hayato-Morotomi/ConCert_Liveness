@@ -25,6 +25,8 @@ From ConCert.Execution Require Import Serializable.
 From ConCert.Examples.EIP20 Require EIP20Token.
 Import ListNotations.
 
+Import DeriveSer.
+
 
 
 Section BATCommon.
@@ -86,14 +88,11 @@ Section BATCommon.
 
   Section Serialization.
 
-  Global Instance setup_serializable : Serializable Setup :=
-    Derive Serializable Setup_rect <build_setup>.
+    Global Instance setup_serializable : Serializable Setup := Derive Ser.
 
-  Global Instance msg_serializable : Serializable Msg :=
-    Derive Serializable Msg_rect <tokenMsg, create_tokens, finalize, refund>.
+    Global Instance msg_serializable : Serializable Msg := Derive Ser.
 
-  Global Instance state_serializable : Serializable State :=
-    Derive Serializable State_rect <build_state>.
+    Global Instance state_serializable : Serializable State := Derive Ser.
 
   End Serialization.
   (* end hide *)
@@ -453,7 +452,7 @@ Section BATCommon.
     induction accounts; intros * is_address act HIn.
     - inversion HIn.
     - cbn in HIn.
-      apply list_relations.Forall_cons in is_address as [is_address is_address'].
+      apply list_relations.list.Forall_cons in is_address as [is_address is_address'].
       destruct_match in HIn.
       destruct HIn; subst.
       all: eauto.
@@ -467,7 +466,7 @@ Section BATCommon.
     - now cbn.
     - cbn.
       destruct_match; auto.
-      apply list_relations.Forall_cons.
+      apply list_relations.list.Forall_cons.
       destruct_and_split; auto.
       apply address_eq_refl.
   Qed.

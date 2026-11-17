@@ -17,7 +17,7 @@ From ConCert.Examples.BoardroomVoting Require Import BoardroomVotingZ.
 From Stdlib Require Import ZArith.
 From Stdlib Require Import List.
 
-Import MRMonadNotation.
+Import MonadNotation.
 
 Local Open Scope string_scope.
 Open Scope Z.
@@ -303,7 +303,7 @@ Definition TT_remap : list (kername * string) :=
   ; remap <%% @ContractCallContext %%> "(address * (address * (tez * tez)))"
   ; remap <%% @Chain %%> "(nat * (nat * nat))" (* chain_height, current_slot, finalized_height *)
   ; remap <%% @chain_height %%> "fst" (* small hack, but valid since ContractCallContext is mapped to a tuple *)
-  ; remap <%% @Blockchain.current_slot %%> "(fun c -> c.(1).(0))" (* small hack, but valid since Chain is mapped to a tuple *)
+  ; remap <%% @BlockchainBase.current_slot %%> "(fun c -> c.(1).(0))" (* small hack, but valid since Chain is mapped to a tuple *)
   ; remap <%% @finalized_height %%> "(fun c -> snd (snd c)" (* small hack, but valid since Chain is mapped to a tuple *)
   ; remap <%% @ctx_from %%> "fst" (* small hack, but valid since ContractCallContext is mapped to a tuple *)
   ; remap <%% @ctx_amount %%> "(fun c -> c.(1).(1).(1))" (* small hack, but valid since ContractCallContext is mapped to a tuple *)

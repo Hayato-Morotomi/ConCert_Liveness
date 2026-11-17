@@ -88,6 +88,7 @@ nra.cache
 
 ## Dune
 _build/
+*.install
 
 ## Editors
 
@@ -100,3 +101,7 @@ _build/
 ### VisualStudioCode Patch ###
 # Ignore all local history of files
 .history
+
+### Local (ConCert 個人用) ###
+.claude/settings.local.json
+memo/*

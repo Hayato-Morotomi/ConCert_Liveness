@@ -23,15 +23,15 @@ Open Scope string_scope.
 
 Definition sep : string := ", ".
 
-(* Derive Show for positive. *)
+(* QCDerive Show for positive. *)
 (* TODO: reenable deprecated-dirpath-Coq warning once Quickchick is updated with full Rocq support *)
 #[warnings=",-deprecated-dirpath-Coq"]
-Derive Show for SerializedType.
+QCDerive Show for SerializedType.
 
 (* TODO: reenable deprecated-dirpath-Coq warning once Quickchick is updated with full Rocq support *)
 (* TODO: reenable non-recursive warning once fixed upstream in Quickchick*)
 #[warnings="-non-recursive,-deprecated-dirpath-Coq"]
-Derive Show for result.
+QCDerive Show for result.
 
 #[export]
 Instance showActionEvaluationError
@@ -259,7 +259,7 @@ Instance showChainTraceI
       match trace with
       | snoc trace' step =>
       match step with
-      | Blockchain.step_block _ _ _ _ _ _ _ _ =>
+      | BlockchainBase.step_block _ _ _ _ _ _ _ _ =>
           let '(_, next_bstate) := chainstep_states step in
           showChainTrace trace' ++ nl ++
           "Block " ++ show next_bstate.(current_slot) ++ " [" ++ nl ++

@@ -157,7 +157,7 @@ Section Theories.
       | H : FMap.find ?x _ = Some _ |- context [ FMap.elements (FMap.add ?x _ _) ] => rewrite FMap.elements_add_existing; eauto
       | |- context [ FMap.add ?x _ (FMap.add ?x _ _) ] => rewrite FMap.add_add
       | H : FMap.find ?x _ = None |- context [ FMap.elements (FMap.add ?x _ _) ] => rewrite FMap.elements_add; eauto
-      | |- context [ FMap.remove ?x (FMap.add ?x _ _) ] => rewrite fin_maps.delete_insert_delete
+      | |- context [ FMap.remove ?x (FMap.add ?x _ _) ] => rewrite fin_maps.delete_insert_eq
       | |- context [ FMap.find ?x (FMap.partial_alter _ ?x _) ] => rewrite FMap.find_partial_alter
       | H : ?x' <> ?x |- context [ FMap.find ?x' (FMap.partial_alter _ ?x _) ] => rewrite FMap.find_partial_alter_ne; auto
       | H : ?x <> ?x' |- context [ FMap.find ?x' (FMap.partial_alter _ ?x _) ] => rewrite FMap.find_partial_alter_ne
@@ -175,7 +175,7 @@ Section Theories.
     repeat match goal with
     | msg : option Msg |- _ => destruct msg
     | msg : Msg |- _ => destruct msg
-    | H : Blockchain.receive _ _ _ _ None = Ok _ |- _ => now contract_simpl
+    | H : BlockchainBase.receive _ _ _ _ None = Ok _ |- _ => now contract_simpl
     | H : receive _ _ _ None = Ok _ |- _ => now contract_simpl
     end.
 
@@ -639,7 +639,7 @@ Section Theories.
     intros * reach deployed.
     apply (lift_outgoing_acts_nil contract); eauto.
     intros.
-    unfold Blockchain.receive in *.
+    unfold BlockchainBase.receive in *.
     now eapply EIP20_no_acts.
   Qed.
 
@@ -686,7 +686,7 @@ Section Theories.
 
       rewrite FMap.elements_empty. cbn. lia.
     - intros IH receive_some.
-      unfold Blockchain.receive in *.
+      unfold BlockchainBase.receive in *.
       cbn in *.
       destruct_message.
       + now erewrite try_transfer_preserves_balances_sum,
